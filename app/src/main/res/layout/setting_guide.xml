@@ -40,7 +40,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="5dp"
                     android:layout_marginBottom="20dp"
-                    android:text="Assists开启引导"
+                    android:text="AssistsX开启引导"
                     android:textColor="#000000"
                     android:textSize="18sp"
                     android:textStyle="bold" />
@@ -74,8 +74,8 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="【已安装的服务】"
-
+                        android:text=" 已安装的服务"
+                        android:textStyle="bold"
                         android:textColor="#009688"
                         android:textSize="16sp" />
 
@@ -110,8 +110,9 @@
                         android:layout_width="wrap_content"
 
                         android:layout_height="wrap_content"
-                        android:text="【AssistsSimple】"
+                        android:text=" AssistsX"
                         android:textColor="#009688"
+                        android:textStyle="bold"
                         android:textSize="16sp" />
 
                 </LinearLayout>
@@ -164,7 +165,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:padding="15dp"
-                        android:text="AssistsSimple"
+                        android:text="AssistsX"
                         android:textColor="#000000"
                         android:textSize="16sp" />
 
