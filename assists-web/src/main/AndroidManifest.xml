@@ -4,19 +4,14 @@
 
     <application>
         <provider
-            android:name="com.ven.web.MPFileProvider"
+            android:name="com.ven.assists.web.CustomFileProvider"
             android:authorities="${applicationId}.assistsmp.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/assists_mp_provider_paths" />
+                android:resource="@xml/assists_web_provider_paths" />
         </provider>
-        <service
-            android:name="com.ven.web.MPService"
-            android:enabled="true"
-            android:exported="false"
-            android:foregroundServiceType="mediaProjection" />
 
     </application>
 
