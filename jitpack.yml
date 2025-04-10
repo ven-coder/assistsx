@@ -1,9 +1,6 @@
 jdk:
   - openjdk17
 
-install:
-  - ./gradlew publishToMavenLocal
-
 build:
   - ./gradlew :assists:publish
   - ./gradlew :assists-mp:publish
