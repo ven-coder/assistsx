@@ -1,7 +1,2 @@
 jdk:
   - openjdk17
-
-build:
-  - ./gradlew :assists:publish
-  - ./gradlew :assists-mp:publish
-  - ./gradlew :assists-opcv:publish
