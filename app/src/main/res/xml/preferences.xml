@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="通用设置">
+
+        <SwitchPreferenceCompat
+            app:iconSpaceReserved="false"
+            app:key="auto_update"
+            app:summary="允许插件自动更新到最新版本"
+            app:title="自动更新" />
+
+        <SwitchPreferenceCompat
+            app:iconSpaceReserved="false"
+            app:key="background_run"
+            app:summary="允许插件在后台运行"
+            app:title="后台运行" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="通知设置">
+
+        <SwitchPreferenceCompat
+            app:iconSpaceReserved="false"
+            app:key="plugin_notification"
+            app:summary="接收插件相关通知"
+            app:title="插件通知" />
+
+        <SwitchPreferenceCompat
+            app:iconSpaceReserved="false"
+            app:key="update_notification"
+            app:summary="接收更新提醒"
+            app:title="更新通知" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="存储设置">
+
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="clear_cache"
+            app:summary="清除插件缓存数据"
+            app:title="清除缓存" />
+
+        <SeekBarPreference
+            app:iconSpaceReserved="false"
+            app:key="max_cache"
+            app:title="最大缓存"
+            app:summary="设置插件最大缓存大小（MB）"
+            android:max="1024"
+            app:min="64"
+            app:defaultValue="256"
+            app:showSeekBarValue="true"
+            app:seekBarIncrement="64" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:iconSpaceReserved="false"
+        app:title="关于">
+
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="version"
+            app:summary="1.0.0"
+            app:title="版本" />
+
+        <Preference
+            app:iconSpaceReserved="false"
+            app:key="privacy_policy"
+            app:summary="查看隐私政策"
+            app:title="隐私政策" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen> 

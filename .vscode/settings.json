@@ -1,0 +1,82 @@
+{
+    // Java配置
+    "java.home": "/Library/Java/JavaVirtualMachines/openjdk-17.jdk/Contents/Home",
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-17",
+            "path": "/Library/Java/JavaVirtualMachines/openjdk-17.jdk/Contents/Home",
+            "default": true
+        }
+    ],
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.configuration.checkProjectSettingsExclusions": false,
+    
+    // Android配置
+    "android-debug.sdkRoot": "/Users/Ven/Library/Android/sdk",
+    "android-debug.abiSupported": ["armeabi-v7a", "arm64-v8a"],
+    "android-debug.abiMap": {
+        "armeabi-v7a": "arm",
+        "arm64-v8a": "arm64"
+    },
+    
+    // Gradle配置
+    "gradle.nestedProjects": true,
+    "gradle.javaDebug": true,
+    
+    // 文件关联
+    "files.associations": {
+        "*.gradle": "groovy",
+        "*.gradle.kts": "kotlin",
+        "*.pro": "properties"
+    },
+    
+    // Kotlin配置
+    "kotlin.languageServer.enabled": true,
+    "kotlin.compiler.jvm.target": "17",
+    
+    // 编辑器配置
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit"
+    },
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    
+    // 文件排除
+    "files.exclude": {
+        "**/.gradle": true,
+        "**/build": true,
+        "**/.idea": true,
+        "**/*.iml": true,
+        "**/.DS_Store": true
+    },
+    
+    // 搜索排除
+    "search.exclude": {
+        "**/build": true,
+        "**/.gradle": true,
+        "**/node_modules": true,
+        "**/.git": true
+    },
+    
+    // XML配置（用于Android布局文件）
+    "xml.format.splitAttributes": true,
+    "xml.format.joinCDATALines": true,
+    
+    // 终端配置
+    "terminal.integrated.env.osx": {
+        "ANDROID_HOME": "/Users/Ven/Library/Android/sdk",
+        "ANDROID_SDK_ROOT": "/Users/Ven/Library/Android/sdk"
+    },
+    
+    // 代码提示配置
+    "editor.suggest.insertMode": "replace",
+    "editor.acceptSuggestionOnCommitCharacter": false,
+    
+    // Git配置
+    "git.ignoreLimitWarning": true,
+    
+    // 调试配置
+    "debug.allowBreakpointsEverywhere": true,
+    "debug.showInlineBreakpointCandidates": true
+} 

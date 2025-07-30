@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">AssistsX</string>
+    <string name="assists_description">AssistsX自动化</string>
+    <string name="sts_description">Assistsx-STS</string>
+    <string name="sas_description">Assistsx-SAS</string>
+    <string name="tbs_description">Assistsx-TBS</string>
+</resources>

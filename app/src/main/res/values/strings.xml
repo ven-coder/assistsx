@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">AssistsX</string>
+    <string name="assists_description">AssistsX自动化</string>
+    <string name="sts_description">Assistsx-STS-解决WX混淆问题</string>
+    <string name="sas_description">Assistsx-SAS-备选2</string>
+    <string name="tbs_description">Assistsx-TBS-备选1</string>
+</resources>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <!--    <item-->
+    <!--        android:id="@+id/item_feedback"-->
+    <!--        android:title="联系/反馈"-->
+    <!--        app:showAsAction="always" />-->
+
+    <!--    <item-->
+    <!--        android:id="@+id/download_history"-->
+    <!--        android:title="下载历史"-->
+    <!--        app:showAsAction="always" />-->
+
+    <!-- 扫描按钮，显示在Toolbar右侧 -->
+    <item
+        android:id="@+id/action_scan"
+        android:textColor="@color/colorPrimary"
+        android:title="重新扫描"
+        app:showAsAction="always" />
+</menu>
