@@ -189,7 +189,7 @@ open class InstalledPluginsFragment : Fragment() {
         }
     }
 
-    open fun showInstallOptionsBottomSheet(): View? {
+    open fun showInstallOptionsBottomSheet(): BottomSheetDialog {
         val bottomSheet = BottomSheetDialog(requireContext())
         val view = LayoutInflater.from(requireContext()).inflate(R.layout.bottom_sheet_install_options, null)
 
@@ -215,7 +215,7 @@ open class InstalledPluginsFragment : Fragment() {
 
         bottomSheet.setContentView(view)
         bottomSheet.show()
-        return view
+        return bottomSheet
     }
 
     private fun handleLocalInstall() {
@@ -621,18 +621,6 @@ open class InstalledPluginsFragment : Fragment() {
         binding.swipeRefreshLayout.visibility = if (plugins.isNotEmpty()) View.VISIBLE else View.GONE
     }
 
-    private fun navigateToPluginStore() {
-        // 尝试让父级 PluginPlatformFragment 执行切换逻辑
-        var parent = parentFragment
-        while (parent != null) {
-            if (parent is PluginPlatformFragment) {
-                parent.switchToStore()
-                break
-            }
-            parent = parent.parentFragment
-        }
-    }
-
     override fun onResume() {
         super.onResume()
         refreshPluginList()
@@ -666,7 +654,6 @@ open class InstalledPluginsFragment : Fragment() {
 
         }
 
-//        PluginIndexActivity.start(plugin)
     }
 
     private fun parsePluginFromConfig(configFile: File, fileName: String, packageName: String): Plugin {
