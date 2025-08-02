@@ -66,7 +66,4 @@ open class PluginPlatformFragment : Fragment() {
         }
     }
 
-    // 新增: 供子 Fragment 调用的快捷切换方法
-    fun switchToStore() {
-    }
 } 

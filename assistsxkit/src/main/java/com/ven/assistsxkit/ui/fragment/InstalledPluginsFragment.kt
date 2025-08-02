@@ -189,7 +189,7 @@ open class InstalledPluginsFragment : Fragment() {
         }
     }
 
-    open fun showInstallOptionsBottomSheet() {
+    open fun showInstallOptionsBottomSheet(): View? {
         val bottomSheet = BottomSheetDialog(requireContext())
         val view = LayoutInflater.from(requireContext()).inflate(R.layout.bottom_sheet_install_options, null)
 
@@ -215,6 +215,7 @@ open class InstalledPluginsFragment : Fragment() {
 
         bottomSheet.setContentView(view)
         bottomSheet.show()
+        return view
     }
 
     private fun handleLocalInstall() {
