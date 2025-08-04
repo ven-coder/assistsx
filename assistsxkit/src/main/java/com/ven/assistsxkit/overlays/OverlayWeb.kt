@@ -11,6 +11,7 @@ import com.ven.assists.window.AssistsWindowManager
 import com.ven.assists.window.AssistsWindowWrapper
 import com.ven.assistsxkit.databinding.WebOverlayBinding
 import com.ven.assistsxkit.model.Plugin
+import com.ven.assistsxkit.model.url
 import com.ven.assistsxkit.server.PluginWebServerManager
 
 @SuppressLint("StaticFieldLeak")
@@ -85,7 +86,7 @@ object OverlayWeb : AssistsServiceListener {
         if (!AssistsWindowManager.contains(assistWindowWrapper?.getView())) {
             AssistsWindowManager.add(assistWindowWrapper)
         }
-        viewBinding?.web?.loadUrl(this.plugin?.mainPath() ?: "")
+        viewBinding?.web?.loadUrl(this.plugin?.url() ?: "")
     }
 
     fun hide() {

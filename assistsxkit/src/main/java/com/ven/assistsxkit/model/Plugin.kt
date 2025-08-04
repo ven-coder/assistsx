@@ -1,6 +1,7 @@
 package com.ven.assistsxkit.model
 
 import com.google.gson.annotations.SerializedName
+import com.ven.assistsxkit.server.PluginWebServerManager
 import java.io.Serializable
 
 /**
@@ -34,20 +35,15 @@ data class Plugin(
     // 安装密码
     val password: String? = ""
 ) : Serializable {
-    @Deprecated("使用indexPath")
-    fun mainPath(): String {
-        if (path.startsWith("http")) {
-            return "$path/$main"
-        } else {
-            return "file://$path/$main"
-        }
+
+}
+
+fun Plugin.url(port: Int = PluginWebServerManager.DEFAULT_PORT): String {
+
+    if (path.startsWith("http")) {
+        return "$path/$index"
+    } else {
+        return "http://127.0.0.1:$port/$index"
     }
 
-    fun indexPath(): String {
-        return if (path.startsWith("http")) {
-            "$path/$index"
-        } else {
-            "file://$path/$index"
-        }
-    }
 }

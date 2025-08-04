@@ -15,6 +15,7 @@ import com.ven.assists.window.AssistsWindowManager.overlayToast
 import com.ven.assists.window.AssistsWindowWrapper
 import com.ven.assistsxkit.databinding.WebOverlayBinding
 import com.ven.assistsxkit.model.Plugin
+import com.ven.assistsxkit.model.url
 import com.ven.assistsxkit.server.PluginWebServerManager
 
 @SuppressLint("StaticFieldLeak")
@@ -90,13 +91,12 @@ object OverlayIndex : AssistsServiceListener {
             AssistsWindowManager.add(assistWindowWrapper)
         }
         if (plugin.path.startsWith("http")) {
-            viewBinding?.web?.loadUrl(plugin.indexPath())
+            viewBinding?.web?.loadUrl(plugin.url())
         } else {
             CoroutineWrapper.launch {
                 val port = PluginWebServerManager.startServer(plugin)
                 if (port > 0) {
-                    plugin.path = "http://127.0.0.1:$port"
-                    runMain { viewBinding?.web?.loadUrl(plugin.indexPath()) }
+                    runMain { viewBinding?.web?.loadUrl(plugin.url()) }
                 } else {
                     "启动插件失败，请检查插件配置文件".overlayToast()
                 }

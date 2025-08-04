@@ -13,6 +13,7 @@ import com.ven.assists.utils.CoroutineWrapper
 import com.ven.assists.utils.runMain
 import com.ven.assistsxkit.databinding.FragmentIndexBinding
 import com.ven.assistsxkit.model.Plugin
+import com.ven.assistsxkit.model.url
 import com.ven.assistsxkit.server.PluginWebServerManager
 
 class IndexFragment : Fragment(), AssistsServiceListener {
@@ -53,13 +54,12 @@ class IndexFragment : Fragment(), AssistsServiceListener {
         binding.webView.onReceivedTitle = onReceivedTitle
         plugin?.let {
             if (it.path.startsWith("http")) {
-                binding.webView.loadUrl(plugin?.indexPath() ?: "")
+                binding.webView.loadUrl(plugin?.url() ?: "")
             } else {
                 CoroutineWrapper.launch {
                     val port = PluginWebServerManager.startServer(it)
                     if (port > 0) {
-                        it.path = "http://127.0.0.1:$port"
-                        runMain { binding.webView.loadUrl(it.indexPath()) }
+                        runMain { binding.webView.loadUrl(it.url()) }
                     } else {
                         ToastUtils.showShort("启动插件失败，请检查插件配置文件")
                     }

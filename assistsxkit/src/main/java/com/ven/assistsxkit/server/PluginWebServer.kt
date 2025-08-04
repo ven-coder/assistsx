@@ -13,7 +13,7 @@ import java.io.File
  */
 object PluginWebServerManager {
     // 选择一个较不常用的端口，避免与常见端口冲突
-    private const val DEFAULT_PORT = 12987
+    const val DEFAULT_PORT = 12987
 
     private var server: PluginHttpServer? = null
     private var currentPort: Int = DEFAULT_PORT
