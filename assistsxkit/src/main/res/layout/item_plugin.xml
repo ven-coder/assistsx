@@ -5,8 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginStart="16dp"
-    android:layout_marginEnd="16dp"
     android:layout_marginTop="8dp"
+    android:layout_marginEnd="16dp"
     android:background="#23252A"
     android:backgroundTint="#23252A"
     app:cardCornerRadius="8dp"
@@ -15,7 +15,7 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp">
+        android:padding="10dp">
 
         <!-- 插件图标背景 -->
         <com.google.android.material.card.MaterialCardView
@@ -40,8 +40,8 @@
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="10dp"
             android:orientation="vertical"
             app:layout_constraintEnd_toStartOf="@+id/btnAction"
             app:layout_constraintStart_toEndOf="@+id/cardIcon"
@@ -51,8 +51,8 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
                 <TextView
                     android:id="@+id/txtName"
@@ -66,27 +66,26 @@
                     android:textStyle="bold"
                     tools:text="Title" />
 
-                <TextView
-                    android:id="@+id/txtVersion"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:textColor="#3EDA83"
-                    android:textSize="12sp"
-                    tools:text="v1.0.0" />
 
             </LinearLayout>
 
             <TextView
-                android:id="@+id/txtStatus"
+                android:id="@+id/txt_description"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
                 android:ellipsize="end"
                 android:maxLines="2"
                 android:textColor="@android:color/darker_gray"
-                android:textSize="14sp"
+                android:textSize="12sp"
                 tools:text="Description" />
+
+            <TextView
+                android:id="@+id/txtVersion"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#3EDA83"
+                android:textSize="12sp"
+                tools:text="v1.0.0" />
 
         </LinearLayout>
 
@@ -103,6 +102,24 @@
             android:padding="0dp"
             app:cornerRadius="18dp"
             app:icon="@drawable/ic_plugin_start"
+            app:iconSize="36dp"
+            app:iconTint="#3EDA83"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAdd"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:visibility="gone"
+            android:insetLeft="0dp"
+            android:insetTop="0dp"
+            android:insetRight="0dp"
+            android:insetBottom="0dp"
+            android:padding="0dp"
+            app:cornerRadius="18dp"
+            app:icon="@drawable/round_add_24"
             app:iconSize="36dp"
             app:iconTint="#3EDA83"
             app:layout_constraintBottom_toBottomOf="parent"

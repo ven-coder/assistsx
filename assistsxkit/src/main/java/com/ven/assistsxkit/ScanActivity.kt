@@ -37,6 +37,7 @@ import androidx.core.net.toUri
 import java.util.UUID
 import android.content.Intent
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.ven.assistsxkit.databinding.ItemPluginBinding
 import kotlinx.coroutines.CancellationException
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.coroutineScope
@@ -239,32 +240,29 @@ class ScanActivity : AppCompatActivity() {
     inner class ScanAdapter(private val items: List<ScanResult>) :
         RecyclerView.Adapter<ScanAdapter.ViewHolder>() {
 
-        inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-            val titleView: TextView = view.findViewById(R.id.tvTitle)
-            val versionView: TextView = view.findViewById(R.id.tvVersion)
-            val descriptionView: TextView = view.findViewById(R.id.tvDescription)
-            val playButton: MaterialButton = view.findViewById(R.id.ivPlay)
+        inner class ViewHolder(val view: ItemPluginBinding) : RecyclerView.ViewHolder(view.root) {
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
             val view = LayoutInflater.from(parent.context)
                 .inflate(R.layout.item_list_plugin_scan, parent, false)
-            return ViewHolder(view)
+            return ViewHolder(ItemPluginBinding.inflate(LayoutInflater.from(parent.context), parent, false))
         }
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            val binding = ItemListPluginScanBinding.bind(holder.itemView)
             val item = items[position]
-            holder.titleView.text = item.plugin.name
-            holder.versionView.text = "v${item.plugin.version}"
-            holder.descriptionView.text = item.plugin.description
-
+            holder.view.txtName.text = item.plugin.name
+            holder.view.txtVersion.text = "v${item.plugin.versionName.ifEmpty { item.plugin.version }}"
+            holder.view.txtDescription.text = item.plugin.description
+            holder.view.txtDescription.isVisible = item.plugin.description.isNotEmpty()
+            holder.view.btnAction.isVisible = false
+            holder.view.btnAdd.isVisible = true
             // 设置点击事件显示详情对话框
             holder.itemView.setOnClickListener {
                 showPluginDetailDialog(item)
             }
 
-            holder.playButton.setOnClickListener {
+            holder.view.btnAdd.setOnClickListener {
                 // 生成唯一ID
                 item.plugin.id = UUID.randomUUID().toString()
                 // 设置插件路径为URL
@@ -277,12 +275,22 @@ class ScanActivity : AppCompatActivity() {
                 finish()
             }
 
-            GlideApp.with(ActivityUtils.getTopActivity())
-                .`as`(PictureDrawable::class.java)
-                .load(item.url.toUri().buildUpon().appendPath(item.plugin.icon).build())
-                .placeholder(R.drawable.ic_baseline_extension_24)
-                .error(R.drawable.ic_baseline_extension_24)
-                .into(binding.imgIcon)
+            if (item.url.endsWith(".svg")) {
+                GlideApp.with(ActivityUtils.getTopActivity())
+                    .`as`(PictureDrawable::class.java)
+                    .load(item.url.toUri().buildUpon().appendPath(item.plugin.icon).build())
+                    .placeholder(R.drawable.ic_baseline_extension_24)
+                    .error(R.drawable.ic_baseline_extension_24)
+                    .into(holder.view.imgIcon)
+
+            } else {
+                GlideApp.with(ActivityUtils.getTopActivity())
+                    .load(item.url.toUri().buildUpon().appendPath(item.plugin.icon).build())
+                    .placeholder(R.drawable.ic_baseline_extension_24)
+                    .error(R.drawable.ic_baseline_extension_24)
+                    .into(holder.view.imgIcon)
+
+            }
         }
 
         override fun getItemCount() = items.size
@@ -293,7 +301,7 @@ class ScanActivity : AppCompatActivity() {
         val plugin = scanResult.plugin
         val message = """
             名称：${plugin.name}
-            版本：${plugin.version}
+            版本：${plugin.versionName.ifEmpty { plugin.version }}
             描述：${plugin.description}
             包名：${plugin.packageName}
             URL：${scanResult.url}

@@ -41,14 +41,16 @@ import com.ven.assistsxkit.ScanActivity
 import com.ven.assistsxkit.databinding.FragmentInstalledPluginsBinding
 import java.io.FileReader
 import org.json.JSONObject
-import org.json.JSONArray
 import com.ven.assists.mp.MPManager
 import com.ven.assistsxkit.common.SPKeys
 import com.ven.assistsxkit.common.FirstInstallHelper
 import com.lzy.okgo.OkGo
 import com.ven.assistsxkit.R
+import com.ven.assistsxkit.overlays.OverlayIndex
 import com.ven.assistsxkit.server.PluginWebServerManager
+import com.ven.assistsxkit.ui.IndexActivity
 import com.ven.assistsxkit.ui.PluginPlatformFragment
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 
 open class InstalledPluginsFragment : Fragment() {
@@ -150,8 +152,6 @@ open class InstalledPluginsFragment : Fragment() {
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
-                // 根据搜索文本过滤插件列表
-                filterPlugins(newText)
                 return true
             }
         })
@@ -524,32 +524,10 @@ open class InstalledPluginsFragment : Fragment() {
     private fun loadInstalledPlugins() {
         try {
             val pluginsJson = SPUtils.getInstance().getString(SPKeys.INSTALLED_PLUGINS, "[]")
-            val pluginsArray = JSONArray(pluginsJson)
-            val plugins = mutableListOf<Plugin>()
-
-            for (i in 0 until pluginsArray.length()) {
-                runCatching {
-                    val pluginJson = pluginsArray.getJSONObject(i)
-                    plugins.add(
-                        Plugin(
-                            id = pluginJson.optString("id"),
-                            name = pluginJson.optString("name"),
-                            version = pluginJson.optString("version"),
-                            description = pluginJson.optString("description"),
-                            path = pluginJson.optString("path"),
-                            packageName = pluginJson.optString("packageName"),
-                            isShowOverlay = pluginJson.optBoolean("isShowOverlay", false),
-                            needScreenCapture = pluginJson.optBoolean("needScreenCapture", false),
-                            overlayTitle = pluginJson.optString("overlayTitle", ""),
-                            main = pluginJson.optString("main", ""),
-                            icon = pluginJson.optString("icon", "")
-                        )
-                    )
-                }
-            }
-            pluginAdapter.submitList(plugins.reversed())
+            val pluginsArray = GsonUtils.fromJson<List<Plugin>>(pluginsJson, GsonUtils.getListType(Plugin::class.java))
+            pluginAdapter.submitList(pluginsArray.reversed())
             // 更新空状态显示
-            updateEmptyState(plugins)
+            updateEmptyState(pluginsArray)
         } catch (e: Exception) {
             Toast.makeText(context, "加载插件列表失败：${e.message}", Toast.LENGTH_SHORT).show()
             // 发生错误时也要更新空状态显示
@@ -563,57 +541,6 @@ open class InstalledPluginsFragment : Fragment() {
     private fun refreshPluginList() {
         // 重新加载插件列表
         loadInstalledPlugins()
-    }
-
-    private fun filterPlugins(query: String?) {
-        try {
-            val pluginsJson = SPUtils.getInstance().getString(SPKeys.INSTALLED_PLUGINS, "[]")
-            val pluginsArray = JSONArray(pluginsJson)
-            val allPlugins = mutableListOf<Plugin>()
-
-            // 加载所有插件
-            for (i in 0 until pluginsArray.length()) {
-                runCatching {
-                    val pluginJson = pluginsArray.getJSONObject(i)
-                    allPlugins.add(
-                        Plugin(
-                            id = pluginJson.optString("id"),
-                            name = pluginJson.optString("name"),
-                            version = pluginJson.optString("version"),
-                            description = pluginJson.optString("description"),
-                            path = pluginJson.optString("path"),
-                            packageName = pluginJson.optString("packageName"),
-                            isShowOverlay = pluginJson.optBoolean("isShowOverlay", false),
-                            needScreenCapture = pluginJson.optBoolean("needScreenCapture", false),
-                            overlayTitle = pluginJson.optString("overlayTitle", ""),
-                            main = pluginJson.optString("main", ""),
-                            icon = pluginJson.optString("icon", "")
-                        )
-                    )
-                }
-            }
-
-            // 根据搜索词过滤插件
-            val filteredPlugins = if (query.isNullOrBlank()) {
-                allPlugins
-            } else {
-                allPlugins.filter { plugin ->
-                    plugin.name.contains(query, ignoreCase = true) ||
-                            plugin.description.contains(query, ignoreCase = true) ||
-                            plugin.packageName.contains(query, ignoreCase = true)
-                }
-            }
-
-            // 更新列表和空状态
-            pluginAdapter.submitList(filteredPlugins)
-            updateEmptyState(filteredPlugins)
-        } catch (e: Exception) {
-            Toast.makeText(context, "过滤插件失败：${e.message}", Toast.LENGTH_SHORT).show()
-            updateEmptyState(emptyList())
-        } finally {
-            // 停止刷新动画（如果正在刷新）
-            binding.swipeRefreshLayout.isRefreshing = false
-        }
     }
 
     private fun updateEmptyState(plugins: List<Plugin>) {
@@ -632,29 +559,19 @@ open class InstalledPluginsFragment : Fragment() {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R && plugin.needScreenCapture && !MPManager.isEnable) {
                 val result = MPManager.request(autoAllow = true)
                 if (!result) {
+                    Toast.makeText(requireContext(), "插件需要屏幕录制权限，权限被拒绝，插件启动失败", Toast.LENGTH_SHORT).show()
                     return@launch
                 }
             }
-
-            // 启动本地 Web 服务（仅当插件存放于应用私有目录时）
-            if (!plugin.path.startsWith("http")) {
-                val rootDir = File(plugin.path)
-                if (rootDir.exists()) {
-                    val port = PluginWebServerManager.startServer(rootDir)
-                    if (port > 0) {
-                        plugin.path = "http://127.0.0.1:$port"
-                    }
-                }
-            }                                                                                    
-            delay(500)
-
-            if (plugin.isShowOverlay) {
-                runMain { OverlayWeb.show(plugin) }
+            if (plugin.indexInOverlay == true) {
+                runMain { OverlayIndex.show(plugin) }
+            } else {
+                IndexActivity.open(plugin)
             }
-
         }
 
     }
+
 
     private fun parsePluginFromConfig(configFile: File, fileName: String, packageName: String): Plugin {
         return try {
@@ -670,27 +587,20 @@ open class InstalledPluginsFragment : Fragment() {
 
             // 读取配置文件内容
             val jsonString = FileReader(newConfigFile).use { it.readText() }
-            val jsonObject = JSONObject(jsonString)
-
+            val plugin = GsonUtils.fromJson(jsonString, Plugin::class.java)
             // 验证packageName是否匹配
-            val configPackageName = jsonObject.getString("packageName")
+            val configPackageName = plugin.packageName
             if (configPackageName != packageName) {
                 throw Exception("配置文件中的packageName(${configPackageName})与目录名($packageName)不匹配")
             }
 
-            Plugin(
-                id = UUID.randomUUID().toString(),
-                name = jsonObject.getString("name"),
-                version = jsonObject.getString("version"),
-                description = jsonObject.getString("description"),
-                path = newConfigFile.parent ?: "",  // 保存插件目录的完整路径
-                packageName = packageName,
-                isShowOverlay = jsonObject.optBoolean("isShowOverlay", false),
-                needScreenCapture = jsonObject.optBoolean("needScreenCapture", false),
-                overlayTitle = jsonObject.optString("overlayTitle", ""),
-                main = jsonObject.optString("main", ""),
-                icon = jsonObject.optString("icon", "")
-            )
+            with(plugin) {
+                id = UUID.randomUUID().toString()
+
+                path = newConfigFile.parent ?: ""
+            }
+
+            plugin
         } catch (e: Exception) {
             throw Exception("解析插件配置文件失败：${e.message}")
         }
@@ -700,14 +610,13 @@ open class InstalledPluginsFragment : Fragment() {
         try {
             // 获取已安装插件列表
             val pluginsJson = SPUtils.getInstance().getString(SPKeys.INSTALLED_PLUGINS, "[]")
-            val pluginsArray = JSONArray(pluginsJson)
-            val newPluginsArray = JSONArray()
+            val pluginsArray = GsonUtils.fromJson<List<Plugin>>(pluginsJson, GsonUtils.getListType(Plugin::class.java))
+            val newPluginsArray = arrayListOf<Plugin>()
 
             // 检查是否存在相同packageName的插件
             var existingFound = false
-            for (i in 0 until pluginsArray.length()) {
-                val pluginJson = pluginsArray.getJSONObject(i)
-                val existingPackageName = pluginJson.optString("packageName")
+            for (i in 0 until pluginsArray.size) {
+                val existingPackageName = pluginsArray[i].packageName
 
                 // 如果找到相同packageName的插件，跳过它（从列表中删除）
                 if (existingPackageName == plugin.packageName) {
@@ -716,7 +625,7 @@ open class InstalledPluginsFragment : Fragment() {
                 }
 
                 // 保留其他插件
-                newPluginsArray.put(pluginJson)
+                newPluginsArray.add(pluginsArray[i])
             }
 
             // 如果删除了已存在的插件信息，提示用户
@@ -726,26 +635,12 @@ open class InstalledPluginsFragment : Fragment() {
                 }
             }
 
-            // 添加新插件
-            val pluginJson = JSONObject().apply {
-                put("id", plugin.id)
-                put("name", plugin.name)
-                put("version", plugin.version)
-                put("description", plugin.description)
-                put("path", plugin.path)
-                put("packageName", plugin.packageName)
-                put("isShowOverlay", plugin.isShowOverlay)
-                put("needScreenCapture", plugin.needScreenCapture)
-                put("overlayTitle", plugin.overlayTitle)
-                put("main", plugin.main)
-                put("icon", plugin.icon)
-            }
 
             // 添加新插件到数组
-            newPluginsArray.put(pluginJson)
+            newPluginsArray.add(plugin)
 
             // 保存更新后的列表
-            SPUtils.getInstance().put(SPKeys.INSTALLED_PLUGINS, newPluginsArray.toString())
+            SPUtils.getInstance().put(SPKeys.INSTALLED_PLUGINS, GsonUtils.toJson(newPluginsArray))
         } catch (e: Exception) {
             throw Exception("保存插件信息失败：${e.message}")
         }
@@ -781,13 +676,9 @@ open class InstalledPluginsFragment : Fragment() {
     private fun showPluginDetailDialog(plugin: Plugin) {
         val message = """
             名称：${plugin.name}
-            版本：${plugin.version}
+            版本：${plugin.versionName.ifEmpty { plugin.version }}
             描述：${plugin.description}
             包名：${plugin.packageName}
-            是否显示悬浮窗：${if (plugin.isShowOverlay) "是" else "否"}
-            是否需要截屏权限：${if (plugin.needScreenCapture) "是" else "否"}
-            悬浮窗标题：${plugin.overlayTitle}
-            ${if (AppUtils.isAppDebug()) "主入口：${plugin.main}" else ""}
         """.trimIndent()
 
         MaterialAlertDialogBuilder(requireContext())
@@ -821,13 +712,13 @@ open class InstalledPluginsFragment : Fragment() {
 
                 // 2. 从已安装插件列表中移除
                 val pluginsJson = SPUtils.getInstance().getString(SPKeys.INSTALLED_PLUGINS, "[]")
-                val pluginsArray = JSONArray(pluginsJson)
-                val newPluginsArray = JSONArray()
+                val pluginsArray = GsonUtils.fromJson<List<Plugin>>(pluginsJson, GsonUtils.getListType(Plugin::class.java))
+                val newPluginsArray = arrayListOf<Plugin>()
 
-                for (i in 0 until pluginsArray.length()) {
-                    val pluginJson = pluginsArray.getJSONObject(i)
-                    if (pluginJson.optString("packageName") != plugin.packageName) {
-                        newPluginsArray.put(pluginJson)
+                for (i in 0 until pluginsArray.size) {
+                    val currentPlugin = pluginsArray[i]
+                    if (currentPlugin.packageName != plugin.packageName) {
+                        newPluginsArray.add(currentPlugin)
                     }
                 }
 

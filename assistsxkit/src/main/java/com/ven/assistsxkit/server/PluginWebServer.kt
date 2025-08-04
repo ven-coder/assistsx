@@ -1,7 +1,11 @@
 package com.ven.assistsxkit.server
 
 import android.util.Log
+import com.ven.assists.utils.CoroutineWrapper
+import com.ven.assistsxkit.model.Plugin
 import fi.iki.elonen.NanoHTTPD
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import java.io.File
 
 /**
@@ -14,23 +18,25 @@ object PluginWebServerManager {
     private var server: PluginHttpServer? = null
     private var currentPort: Int = DEFAULT_PORT
 
+    val startFlow = MutableSharedFlow<Plugin>()
+
     /**
-     * 启动本地服务器，根目录为 [rootDir]。
+     * 启动本地服务器。
      * @return 实际启动的端口号
      */
     @Synchronized
-    fun startServer(rootDir: File, port: Int = DEFAULT_PORT): Int {
+    fun startServer(plugin: Plugin, port: Int = DEFAULT_PORT): Int {
         // 若已有服务在运行，先停止
         stopServer()
         currentPort = port
         return try {
+            val rootDir = File(plugin.path)
             server = PluginHttpServer(rootDir, currentPort).apply {
                 start(NanoHTTPD.SOCKET_READ_TIMEOUT, false)
             }
+            CoroutineWrapper.launch { startFlow.emit(plugin) }
             currentPort
         } catch (e: Exception) {
-            Log.e("PluginWebServer", "Start server failed: ${e.message}")
-            // 启动失败时返回 -1 以示错误
             -1
         }
     }

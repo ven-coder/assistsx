@@ -14,6 +14,7 @@ import com.ven.assistsxkit.databinding.ItemPluginBinding
 import com.ven.assistsxkit.model.Plugin
 import java.io.File
 import androidx.core.net.toUri
+import androidx.core.view.isVisible
 import com.ven.assistsxkit.R
 
 class InstalledPluginAdapter(
@@ -71,22 +72,40 @@ class InstalledPluginAdapter(
             binding.apply {
                 // 设置基本信息
                 txtName.text = plugin.name
-                txtVersion.text = "v${plugin.version}"
-                txtStatus.text = plugin.description
+                txtVersion.text = plugin.versionName.ifEmpty { plugin.version }
+                txtDescription.text = plugin.description
+                txtDescription.isVisible = plugin.description.isNotEmpty()
 
                 // 加载插件图标
-                GlideApp.with(ActivityUtils.getTopActivity())
-                    .`as`(PictureDrawable::class.java).let {
-                        if (plugin.path.startsWith("http")) {
-                            it.load(plugin.path.toUri().buildUpon().appendPath(plugin.icon).build())
-                        } else {
-                            val fileIcon = File(plugin.path, plugin.icon)
-                            it.load(fileIcon)
+                if (plugin.icon.endsWith(".svg")) {
+                    GlideApp.with(ActivityUtils.getTopActivity())
+                        .`as`(PictureDrawable::class.java).let {
+                            if (plugin.path.startsWith("http")) {
+                                it.load(plugin.path.toUri().buildUpon().appendPath(plugin.icon).build())
+                            } else {
+                                val fileIcon = File(plugin.path, plugin.icon)
+                                it.load(fileIcon)
+                            }
                         }
-                    }
-                    .placeholder(R.drawable.ic_baseline_extension_24)
-                    .error(R.drawable.ic_baseline_extension_24)
-                    .into(imgIcon)
+                        .placeholder(R.drawable.ic_baseline_extension_24)
+                        .error(R.drawable.ic_baseline_extension_24)
+                        .into(imgIcon)
+
+                } else {
+                    GlideApp.with(ActivityUtils.getTopActivity())
+                        .let {
+                            if (plugin.path.startsWith("http")) {
+                                it.load(plugin.path.toUri().buildUpon().appendPath(plugin.icon).build())
+                            } else {
+                                val fileIcon = File(plugin.path, plugin.icon)
+                                it.load(fileIcon)
+                            }
+                        }
+                        .placeholder(R.drawable.ic_baseline_extension_24)
+                        .error(R.drawable.ic_baseline_extension_24)
+                        .into(imgIcon)
+
+                }
 
                 // 设置操作按钮样式
                 btnAction.apply {
