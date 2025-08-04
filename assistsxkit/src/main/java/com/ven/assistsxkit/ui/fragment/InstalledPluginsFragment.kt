@@ -563,7 +563,7 @@ open class InstalledPluginsFragment : Fragment() {
                     return@launch
                 }
             }
-            if (plugin.indexInOverlay == true) {
+            if (plugin.indexInOverlay == true || plugin.isShowOverlay) {
                 runMain { OverlayIndex.show(plugin) }
             } else {
                 IndexActivity.open(plugin)
