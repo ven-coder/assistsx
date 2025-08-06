@@ -9,8 +9,8 @@ buildscript {
         targetSdk = 33
         
         // 应用版本
-        versionCode = 2
-        versionName = "0.0.1"
+        versionCode = 3
+        versionName = "0.0.2"
 
         // 依赖库版本
         coreKtxVersion = "1.13.1"
