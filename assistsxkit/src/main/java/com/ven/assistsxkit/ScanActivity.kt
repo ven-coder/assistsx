@@ -3,8 +3,6 @@ package com.ven.assistsxkit
 import android.graphics.drawable.PictureDrawable
 import android.net.wifi.WifiManager
 import android.os.Bundle
-import android.text.SpannableString
-import android.text.style.ForegroundColorSpan
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
@@ -36,6 +34,8 @@ import java.net.Socket
 import androidx.core.net.toUri
 import java.util.UUID
 import android.content.Intent
+import android.util.Log
+import com.blankj.utilcode.util.KeyboardUtils
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.ven.assistsxkit.databinding.ItemPluginBinding
 import kotlinx.coroutines.CancellationException
@@ -89,33 +89,23 @@ class ScanActivity : AppCompatActivity() {
             adapter = this@ScanActivity.adapter
         }
 
+        // 设置扫描按钮点击事件
+        viewBind.btnScan.setOnClickListener {
+            KeyboardUtils.hideSoftInput(this)
+            startScan()
+        }
+
         // 启动时自动扫描
         startScan()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // 加载菜单资源，添加scan按钮
-        menuInflater.inflate(R.menu.main, menu)
-
-        // 设置菜单项文字颜色
-        for (i in 0 until menu.size()) {
-            val item = menu.getItem(i)
-            val spanString = SpannableString(item.title.toString())
-            spanString.setSpan(ForegroundColorSpan(resources.getColor(R.color.colorPrimary, theme)), 0, spanString.length, 0)
-            item.title = spanString
-        }
-
-        return true
+        // 不显示菜单，因为扫描按钮已经移到端口输入框旁边
+        return false
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
-            R.id.action_scan -> {
-                // 点击Toolbar右侧Scan按钮，执行扫描
-                startScan()
-                true
-            }
-
             android.R.id.home -> {
                 // 处理返回按钮点击
                 finish()
@@ -138,6 +128,19 @@ class ScanActivity : AppCompatActivity() {
         // 取消之前的扫描
         scanJob?.cancel()
 
+        // 获取端口号
+        val portText = viewBind.etPort.text.toString()
+        if (portText.isEmpty()) {
+            ToastUtils.showShort("请输入端口号")
+            return
+        }
+
+        val port = portText.toIntOrNull()
+        if (port == null || port <= 0 || port > 65535) {
+            ToastUtils.showShort("请输入有效的端口号 (1-65535)")
+            return
+        }
+
         // 清空结果
         scanResults.clear()
         adapter?.notifyDataSetChanged()
@@ -155,7 +158,6 @@ class ScanActivity : AppCompatActivity() {
 
         scanJob = CoroutineWrapper.launch {
             runCatching {
-                val port = 5173
                 val subnet = getSubnetAddress()
                 val totalIps = 254
                 val scannedCount = AtomicInteger(0)
@@ -224,6 +226,14 @@ class ScanActivity : AppCompatActivity() {
     private fun updateEmptyView() {
         viewBind.tvEmpty.isVisible = scanResults.isEmpty()
         viewBind.recyclerView.isVisible = scanResults.isNotEmpty()
+        CoroutineWrapper.launch {
+            val address = getSubnetAddress()
+            runMain {
+                if (viewBind.tvEmpty.isVisible) {
+                    viewBind.tvEmpty.text = "未发现插件\n\n局域IP：$address\n请检查手机与插件\n是否在相同局域IP以及端口是否一致"
+                }
+            }
+        }
     }
 
     private fun getSubnetAddress(): String {
