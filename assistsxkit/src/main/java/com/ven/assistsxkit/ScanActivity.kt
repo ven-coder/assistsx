@@ -42,6 +42,9 @@ import kotlinx.coroutines.CancellationException
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import java.util.concurrent.TimeUnit
 
 class ScanActivity : AppCompatActivity() {
     private var scanJob: Job? = null
@@ -162,9 +165,9 @@ class ScanActivity : AppCompatActivity() {
                 val totalIps = 254
                 val scannedCount = AtomicInteger(0)
 
-                // 使用 5 个协程并发扫描
+                // 使用 10 个协程并发扫描
                 coroutineScope {
-                    repeat(5) { offset ->
+                    repeat(50) { offset ->
                         launch {
                             var i = offset + 1
                             while (i <= totalIps && isActive) {
@@ -172,13 +175,18 @@ class ScanActivity : AppCompatActivity() {
                                 val ip = "$subnet.$i"
                                 // 尝试连接端口判断是否开放
                                 runCatching {
-                                    val socket = Socket()
-                                    socket.connect(InetSocketAddress(ip, port), 100)
-                                    socket.close()
-
                                     // 找到服务器，尝试获取配置
                                     val url = "http://$ip:$port"
-                                    val response = OkGo.get<String>("$url/assistsx_plugin_config.json").execute()
+                                    val request = Request.Builder().url("$url/assistsx_plugin_config.json")
+                                        .get()
+                                        .build()
+                                    val httpClient = OkHttpClient.Builder()
+                                        .callTimeout(500, TimeUnit.MILLISECONDS)
+                                        .readTimeout(500, TimeUnit.MILLISECONDS)
+                                        .writeTimeout(500, TimeUnit.MILLISECONDS)
+                                        .build()
+                                    val response = httpClient.newCall(request).execute()
+
                                     if (response.isSuccessful) {
                                         response.body?.string()?.let { jsonString ->
                                             val config = GsonUtils.fromJson(jsonString, Plugin::class.java)
@@ -203,7 +211,7 @@ class ScanActivity : AppCompatActivity() {
                                 }
 
                                 // 递增到下一个待扫描 IP
-                                i += 5
+                                i += 50
                             }
                         }
                     }
