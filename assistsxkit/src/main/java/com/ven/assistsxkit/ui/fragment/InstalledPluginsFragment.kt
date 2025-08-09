@@ -723,7 +723,7 @@ open class InstalledPluginsFragment : Fragment() {
                 }
 
                 // 3. 保存更新后的插件列表
-                SPUtils.getInstance().put(SPKeys.INSTALLED_PLUGINS, newPluginsArray.toString())
+                SPUtils.getInstance().put(SPKeys.INSTALLED_PLUGINS, GsonUtils.toJson(newPluginsArray))
 
                 // 4. 在主线程更新UI
                 withContext(Dispatchers.Main) {
