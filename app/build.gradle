@@ -60,9 +60,6 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation project(":assistsxkit")
-//    implementation "com.github.ven-coder:assists-base:3.2.172"
-//    implementation "com.github.ven-coder:assists-mp:3.2.172"
-//    implementation "com.github.ven-coder:assists-web:0.0.22-SNAPSHOT"
     implementation "androidx.room:room-runtime:${rootProject.ext.roomVersion}"
     implementation "androidx.room:room-ktx:${rootProject.ext.roomVersion}"
     implementation "com.github.mrmike:ok2curl:${rootProject.ext.ok2curlVersion}"
