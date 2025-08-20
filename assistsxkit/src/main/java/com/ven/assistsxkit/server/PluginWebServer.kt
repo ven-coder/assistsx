@@ -55,11 +55,6 @@ object PluginWebServerManager {
 
 private class PluginHttpServer(private val rootDir: File, port: Int) : NanoHTTPD(port) {
     override fun serve(session: IHTTPSession): Response {
-        // 处理 CORS 预检请求
-        if (session.method == Method.OPTIONS) {
-            return handleCorsPreflight()
-        }
-        
         var uriPath = session.uri.trimStart('/')
         if (uriPath.isEmpty()) {
             uriPath = "index.html" // 默认首页
@@ -69,31 +64,6 @@ private class PluginHttpServer(private val rootDir: File, port: Int) : NanoHTTPD
             return newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "404 Not Found")
         }
         val mime = NanoHTTPD.getMimeTypeForFile(targetFile.name)
-        val response = newChunkedResponse(Response.Status.OK, mime, targetFile.inputStream())
-        
-        // 添加 CORS 头
-        addCorsHeaders(response)
-        
-        return response
-    }
-    
-    /**
-     * 处理 CORS 预检请求
-     */
-    private fun handleCorsPreflight(): Response {
-        val response = newFixedLengthResponse(Response.Status.OK, MIME_PLAINTEXT, "")
-        addCorsHeaders(response)
-        return response
-    }
-    
-    /**
-     * 添加 CORS 头信息
-     */
-    private fun addCorsHeaders(response: Response) {
-        response.addHeader("Access-Control-Allow-Origin", "*")
-        response.addHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-        response.addHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
-        response.addHeader("Access-Control-Max-Age", "86400")
-        response.addHeader("Access-Control-Allow-Credentials", "true")
+        return newChunkedResponse(Response.Status.OK, mime, targetFile.inputStream())
     }
 } 
