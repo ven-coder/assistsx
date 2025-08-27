@@ -4,6 +4,29 @@
 -keep class com.ven.assists.web.** { *; }
 -keep class com.ven.assistsx.model.** { *; }
 
+# Glide
+-keep public class * implements com.bumptech.glide.module.GlideModule
+-keep public class * extends com.bumptech.glide.module.AppGlideModule
+-keep public class com.bumptech.glide.GeneratedAppGlideModuleImpl
+-keep class com.bumptech.glide.** { *; }
+-dontwarn com.bumptech.glide.**
+-keep class com.bumptech.glide.GeneratedAppGlideModuleImpl
+-keep class com.bumptech.glide.annotation.GlideModule
+
+# 解决GeneratedAppGlideModuleImpl重复定义问题
+-dontwarn com.bumptech.glide.GeneratedAppGlideModuleImpl
+
+# 解决GeneratedRequestManagerFactory重复定义问题
+-dontwarn com.bumptech.glide.GeneratedRequestManagerFactory
+
+# 排除assistsxkit中的Glide相关类，避免重复定义
+-dontwarn com.ven.assistsxkit.**
+-keep class com.ven.assistsxkit.** { *; }
+
+# 排除所有Glide生成的类，避免与assistsxkit中的类冲突
+-dontwarn com.bumptech.glide.Generated*
+
+
 # 保持项目模块的类
 -keep class com.youth.banner.** { *; }
 -keep class com.weikaiyun.fragmentation.** { *; }
