@@ -40,7 +40,7 @@ buildscript {
         
         // Gradle 插件版本
         gradleVersion = "7.3.0"
-        kotlinGradleVersion = "1.7.10"
+        kotlinGradleVersion = "1.8.22"
         dokkaVersion = "1.8.10"
     }
     repositories {
@@ -54,7 +54,7 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:7.3.0'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.10"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.22"
 
         classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
     }
