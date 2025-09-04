@@ -28,7 +28,13 @@ class IndexFragment : Fragment(), AssistsServiceListener {
         }
     }
 
-    val binding: FragmentIndexBinding by lazy { FragmentIndexBinding.inflate(layoutInflater) }
+    val binding: FragmentIndexBinding by lazy {
+        FragmentIndexBinding.inflate(layoutInflater).apply {
+            ivWebBack.setOnClickListener { webView.goBack() }
+            ivWebForward.setOnClickListener { webView.goForward() }
+            ivWebRefresh.setOnClickListener { webView.reload() }
+        }
+    }
 
     var plugin: Plugin? = null
     var onReceivedTitle: ((title: String) -> Unit)? = null
@@ -75,6 +81,9 @@ class IndexFragment : Fragment(), AssistsServiceListener {
 
     override fun onDestroy() {
         super.onDestroy()
+        binding.webView.destroy()
+        binding.webView.removeAllViews()
+        binding.webView.clearHistory()
         AssistsService.listeners.remove(this)
         PluginWebServerManager.stopServer()
     }

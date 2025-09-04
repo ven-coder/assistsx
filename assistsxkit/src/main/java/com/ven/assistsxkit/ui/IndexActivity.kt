@@ -11,6 +11,7 @@ import androidx.core.graphics.toColorInt
 import com.blankj.utilcode.util.ActivityUtils
 import com.blankj.utilcode.util.BarUtils
 import com.blankj.utilcode.util.FragmentUtils
+import com.ven.assists.window.AssistsWindowManager
 import com.ven.assistsxkit.R
 import com.ven.assistsxkit.databinding.FragmentContainerActivityBinding
 import com.ven.assistsxkit.model.Plugin
@@ -44,6 +45,7 @@ class IndexActivity : AppCompatActivity() {
         binding.toolbar.setNavigationOnClickListener {
             // 返回
             finish()
+            AssistsWindowManager.removeView()
         }
         FragmentUtils.add(supportFragmentManager, IndexFragment.get(intent.getSerializableExtra("plugin") as Plugin).apply {
             onReceivedTitle = {

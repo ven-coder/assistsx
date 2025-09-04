@@ -160,6 +160,34 @@ class ScanActivity : AppCompatActivity() {
         viewBind.toolbar.title = "局域网插件扫描中..."
 
         scanJob = CoroutineWrapper.launch {
+
+//            runCatching {
+//                val url = "http://192.168.10.236:5173"
+//
+//                val request = Request.Builder().url("$url/assistsx_plugin_config.json")
+//                    .get()
+//                    .build()
+//                val httpClient = OkHttpClient.Builder()
+////                    .callTimeout(1000, TimeUnit.MILLISECONDS)
+////                    .readTimeout(1000, TimeUnit.MILLISECONDS)
+////                    .writeTimeout(1000, TimeUnit.MILLISECONDS)
+//                    .build()
+//                val response = httpClient.newCall(request).execute()
+//
+//                if (response.isSuccessful) {
+//                    response.body?.string()?.let { jsonString ->
+//                        val config = GsonUtils.fromJson(jsonString, Plugin::class.java)
+//                        config.path = url
+//                        runMain {
+//                            scanResults.add(ScanResult(url, config))
+//                            adapter?.notifyItemInserted(scanResults.size - 1)
+//                            updateEmptyView()
+//                        }
+//                    }
+//                }
+//            }.onFailure { LogUtils.e(it) }
+
+
             runCatching {
                 val subnet = getSubnetAddress()
                 val totalIps = 254
@@ -174,9 +202,9 @@ class ScanActivity : AppCompatActivity() {
                                 // 当前 IP
                                 val ip = "$subnet.$i"
                                 // 尝试连接端口判断是否开放
+                                // 找到服务器，尝试获取配置
+                                val url = "http://$ip:$port"
                                 runCatching {
-                                    // 找到服务器，尝试获取配置
-                                    val url = "http://$ip:$port"
                                     val request = Request.Builder().url("$url/assistsx_plugin_config.json")
                                         .get()
                                         .build()
@@ -185,6 +213,11 @@ class ScanActivity : AppCompatActivity() {
                                         .readTimeout(500, TimeUnit.MILLISECONDS)
                                         .writeTimeout(500, TimeUnit.MILLISECONDS)
                                         .build()
+
+//                                    if (url == "http://192.168.10.236:5173") {
+//                                        LogUtils.d("扫描", url)
+//                                    }
+
                                     val response = httpClient.newCall(request).execute()
 
                                     if (response.isSuccessful) {
@@ -200,6 +233,9 @@ class ScanActivity : AppCompatActivity() {
                                     }
                                 }.onFailure {
                                     // 忽略单个 IP 扫描异常，继续下一次
+//                                    if (url == "http://192.168.10.236:5173") {
+//                                        LogUtils.d("扫描失败", url, it)
+//                                    }
                                 }
 
                                 // 更新进度

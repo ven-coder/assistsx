@@ -14,6 +14,8 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.view.accessibility.AccessibilityEvent
+import androidx.activity.result.ActivityResultCallback
+import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationManagerCompat
@@ -45,6 +47,8 @@ class MainFragment : Fragment() {
             tvVersion.setText("版本：${AppUtils.getAppVersionName()}")
         }
     }
+
+    lateinit var notificationsPermissionLauncher: ActivityResultLauncher<Intent?>
 
 
     // 注册扫描结果处理器
@@ -85,6 +89,10 @@ class MainFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        notificationsPermissionLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult(), ActivityResultCallback() {
+
+        })
+
         // 设置状态栏样式与AppBar一致
         BarUtils.setStatusBarColor(requireActivity(), "#23252A".toColorInt(), true)
         BarUtils.setStatusBarLightMode(requireActivity(), false)
@@ -96,22 +104,19 @@ class MainFragment : Fragment() {
     }
 
     private fun checkPermission() {
-        val areNotificationsEnabled = NotificationManagerCompat.from(requireActivity()).areNotificationsEnabled();
-        if (!areNotificationsEnabled) {
-            // 通知权限未开启，提示用户去设置
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                PermissionUtils.permission(Manifest.permission.POST_NOTIFICATIONS).callback(object : SimpleCallback {
-                    override fun onGranted() {
+        // 通知权限未开启，提示用户去设置
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            PermissionUtils.permission(Manifest.permission.POST_NOTIFICATIONS).callback(object : SimpleCallback {
+                override fun onGranted() {
 
-                    }
+                }
 
-                    override fun onDenied() {
-                        showNotificationPermissionOpenDialog()
-                    }
-                }).request()
-            } else {
-                showNotificationPermissionOpenDialog()
-            }
+                override fun onDenied() {
+                    showNotificationPermissionOpenDialog()
+                }
+            }).request()
+        } else {
+            showNotificationPermissionOpenDialog()
         }
     }
 
