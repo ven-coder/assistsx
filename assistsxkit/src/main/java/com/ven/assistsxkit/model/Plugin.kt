@@ -47,3 +47,11 @@ fun Plugin.url(port: Int = PluginWebServerManager.DEFAULT_PORT): String {
     }
 
 }
+
+fun Plugin.getDomain(): String {
+    return if (path.startsWith("http")) {
+        path
+    } else {
+        "http://127.0.0.1:${PluginWebServerManager.DEFAULT_PORT}"
+    }
+}

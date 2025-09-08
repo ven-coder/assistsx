@@ -6,6 +6,7 @@ import android.text.SpannableString
 import android.text.style.ForegroundColorSpan
 import android.view.Menu
 import android.view.MenuItem
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.graphics.toColorInt
 import com.blankj.utilcode.util.ActivityUtils
@@ -15,6 +16,7 @@ import com.ven.assists.window.AssistsWindowManager
 import com.ven.assistsxkit.R
 import com.ven.assistsxkit.databinding.FragmentContainerActivityBinding
 import com.ven.assistsxkit.model.Plugin
+import com.ven.assistsxkit.server.PluginWebServerManager
 
 class IndexActivity : AppCompatActivity() {
 
@@ -45,12 +47,23 @@ class IndexActivity : AppCompatActivity() {
         binding.toolbar.setNavigationOnClickListener {
             // 返回
             finish()
-            AssistsWindowManager.removeView()
+            AssistsWindowManager.removeAllWindow()
+            PluginWebServerManager.stopServer()
         }
         FragmentUtils.add(supportFragmentManager, IndexFragment.get(intent.getSerializableExtra("plugin") as Plugin).apply {
             onReceivedTitle = {
                 this@IndexActivity.binding.toolbar.title = it
             }
         }, binding.container.id)
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+//                // 执行你的自定义逻辑
+//                AssistsWindowManager.removeAllWindow()
+//                PluginWebServerManager.stopServer()
+//                finish()
+            }
+        })
     }
+
 }

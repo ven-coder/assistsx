@@ -20,6 +20,8 @@ object PluginWebServerManager {
 
     val startFlow = MutableSharedFlow<Plugin>()
 
+    var plugin: Plugin? = null
+
     /**
      * 启动本地服务器。
      * @return 实际启动的端口号
@@ -35,6 +37,7 @@ object PluginWebServerManager {
                 start(NanoHTTPD.SOCKET_READ_TIMEOUT, false)
             }
             CoroutineWrapper.launch { startFlow.emit(plugin) }
+            this.plugin = plugin
             currentPort
         } catch (e: Exception) {
             -1

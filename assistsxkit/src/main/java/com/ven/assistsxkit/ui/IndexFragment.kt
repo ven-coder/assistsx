@@ -59,6 +59,7 @@ class IndexFragment : Fragment(), AssistsServiceListener {
         super.onViewCreated(view, savedInstanceState)
         binding.webView.onReceivedTitle = onReceivedTitle
         plugin?.let {
+            PluginWebServerManager.plugin = it
             if (it.path.startsWith("http")) {
                 binding.webView.loadUrl(plugin?.url() ?: "")
             } else {

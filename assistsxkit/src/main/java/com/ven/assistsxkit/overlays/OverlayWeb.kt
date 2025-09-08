@@ -103,7 +103,7 @@ object OverlayWeb : AssistsServiceListener {
         viewBinding?.web?.removeAllViews()
         viewBinding?.web?.destroy()
         assistWindowWrapper?.viewBinding?.root?.removeAllViews()
-        AssistsWindowManager.removeView(assistWindowWrapper?.getView())
+        AssistsWindowManager.removeWindow(assistWindowWrapper?.getView())
         viewBinding = null
         assistWindowWrapper = null
         // 停止本地 HTTP 服务，释放端口
