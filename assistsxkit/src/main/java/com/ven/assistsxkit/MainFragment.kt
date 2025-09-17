@@ -115,8 +115,6 @@ class MainFragment : Fragment() {
                     showNotificationPermissionOpenDialog()
                 }
             }).request()
-        } else {
-            showNotificationPermissionOpenDialog()
         }
     }
 
