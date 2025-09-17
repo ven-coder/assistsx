@@ -1,6 +1,7 @@
 package com.ven.assistsxkit.model
 
 import com.google.gson.annotations.SerializedName
+import com.ven.assistsxkit.db.entity.PluginEntity
 import com.ven.assistsxkit.server.PluginWebServerManager
 import java.io.Serializable
 
@@ -30,6 +31,8 @@ data class Plugin(
     val indexInOverlay: Boolean? = false,
     val icon: String = "",
     val packageName: String = "",  // 插件包名，用于创建插件目录
+    // 插件端口号
+    val port: Int = -1,
     // 是否启用安装密码
     val passwordEnabled: Boolean = false,
     // 安装密码
@@ -38,7 +41,7 @@ data class Plugin(
 
 }
 
-fun Plugin.url(port: Int = PluginWebServerManager.DEFAULT_PORT): String {
+fun Plugin.url(port: Int = this.port): String {
 
     if (path.startsWith("http")) {
         return "$path/$index"
@@ -52,6 +55,6 @@ fun Plugin.getDomain(): String {
     return if (path.startsWith("http")) {
         path
     } else {
-        "http://127.0.0.1:${PluginWebServerManager.DEFAULT_PORT}"
+        "http://127.0.0.1:$port"
     }
 }

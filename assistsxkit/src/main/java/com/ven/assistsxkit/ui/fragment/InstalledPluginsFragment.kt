@@ -45,6 +45,7 @@ import com.ven.assists.mp.MPManager
 import com.ven.assistsxkit.common.SPKeys
 import com.ven.assistsxkit.common.FirstInstallHelper
 import com.lzy.okgo.OkGo
+import com.ven.assistsxkit.App
 import com.ven.assistsxkit.R
 import com.ven.assistsxkit.overlays.OverlayIndex
 import com.ven.assistsxkit.server.PluginWebServerManager
@@ -641,6 +642,9 @@ open class InstalledPluginsFragment : Fragment() {
 
             // 保存更新后的列表
             SPUtils.getInstance().put(SPKeys.INSTALLED_PLUGINS, GsonUtils.toJson(newPluginsArray))
+
+            App.pluginRepository.insertPlugin(plugin)
+
         } catch (e: Exception) {
             throw Exception("保存插件信息失败：${e.message}")
         }
@@ -705,6 +709,9 @@ open class InstalledPluginsFragment : Fragment() {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 // 1. 删除插件文件
+
+                App.pluginRepository.deletePluginByPackageName(plugin.packageName)
+
                 val pluginDir = File(pluginsDir, plugin.packageName)
                 if (pluginDir.exists() && pluginDir.isDirectory) {
                     pluginDir.deleteRecursively()
