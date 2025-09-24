@@ -96,7 +96,7 @@ object OverlayIndex : AssistsServiceListener {
             CoroutineWrapper.launch {
                 val port = PluginWebServerManager.startServer(plugin)
                 if (port > 0) {
-                    runMain { viewBinding?.web?.loadUrl(plugin.url()) }
+                    runMain { viewBinding?.web?.loadUrl(plugin.url(port = port)) }
                 } else {
                     "启动插件失败，请检查插件配置文件".overlayToast()
                 }
