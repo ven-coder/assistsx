@@ -643,7 +643,9 @@ open class InstalledPluginsFragment : Fragment() {
             // 保存更新后的列表
             SPUtils.getInstance().put(SPKeys.INSTALLED_PLUGINS, GsonUtils.toJson(newPluginsArray))
 
-            App.pluginRepository.insertPlugin(plugin)
+            runCatching {
+                App.pluginRepository.insertPlugin(plugin)
+            }
 
         } catch (e: Exception) {
             throw Exception("保存插件信息失败：${e.message}")
@@ -710,7 +712,10 @@ open class InstalledPluginsFragment : Fragment() {
             try {
                 // 1. 删除插件文件
 
-                App.pluginRepository.deletePluginByPackageName(plugin.packageName)
+
+                runCatching {
+                    App.pluginRepository.deletePluginByPackageName(plugin.packageName)
+                }
 
                 val pluginDir = File(pluginsDir, plugin.packageName)
                 if (pluginDir.exists() && pluginDir.isDirectory) {
