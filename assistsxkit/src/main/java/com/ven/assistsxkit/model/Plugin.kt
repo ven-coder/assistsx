@@ -32,7 +32,7 @@ data class Plugin(
     val icon: String = "",
     val packageName: String = "",  // 插件包名，用于创建插件目录
     // 插件端口号
-    val port: Int = -1,
+    val port: Int = PluginWebServerManager.DEFAULT_PORT,
     // 是否启用安装密码
     val passwordEnabled: Boolean = false,
     // 安装密码

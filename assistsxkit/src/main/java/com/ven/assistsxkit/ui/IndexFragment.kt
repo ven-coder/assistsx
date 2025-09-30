@@ -66,7 +66,7 @@ class IndexFragment : Fragment(), AssistsServiceListener {
                 CoroutineWrapper.launch {
                     val port = PluginWebServerManager.startServer(it)
                     if (port > 0) {
-                        runMain { binding.webView.loadUrl(it.url()) }
+                        runMain { binding.webView.loadUrl(it.url(port = port)) }
                     } else {
                         ToastUtils.showShort("启动插件失败，请检查插件配置文件")
                     }

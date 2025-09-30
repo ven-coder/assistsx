@@ -17,7 +17,7 @@ class XWebview @JvmOverloads constructor(
 ) : ASWebView(context, attrs) {
 
     init {
-        javascriptInterface.callIntercept = { json ->
+        callIntercept = { json ->
 
             var targetJson = json
 
