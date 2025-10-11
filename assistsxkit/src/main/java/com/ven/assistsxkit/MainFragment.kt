@@ -99,7 +99,7 @@ class MainFragment : Fragment() {
         BarUtils.setNavBarLightMode(requireActivity(), false)
         BarUtils.setNavBarColor(requireActivity(), "#23252A".toColorInt())
 
-        checkPermission()
+//        checkPermission()
 
     }
 
@@ -119,7 +119,7 @@ class MainFragment : Fragment() {
     }
 
     private fun showNotificationPermissionOpenDialog() {
-        XPopup.Builder(requireActivity()).asConfirm("提示", "未开启通知权限，开启通知权限以获得完整测试相关通知提示") {
+        XPopup.Builder(requireActivity()).asConfirm("提示", "未开启通知权限，开启通知权限以获得完整相关通知提示") {
             val intent = Intent()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 // Android 8.0及以上版本，跳转到应用的通知设置页面

@@ -18,6 +18,7 @@ import androidx.core.view.isVisible
 import com.blankj.utilcode.util.AppUtils
 import com.blankj.utilcode.util.BarUtils
 import com.blankj.utilcode.util.FragmentUtils
+import com.blankj.utilcode.util.LogUtils
 import com.blankj.utilcode.util.PermissionUtils
 import com.blankj.utilcode.util.PermissionUtils.SimpleCallback
 import com.blankj.utilcode.util.ToastUtils
@@ -41,6 +42,8 @@ class MainActivity : AppCompatActivity(), AssistsServiceListener {
     val viewBind: ActivityMainBinding by lazy {
         ActivityMainBinding.inflate(layoutInflater).apply {
             FragmentUtils.add(supportFragmentManager, MainFragment(), R.id.fl_container)
+            LogUtils.d("add MainFragment")
+
         }
     }
 
@@ -95,8 +98,10 @@ class MainActivity : AppCompatActivity(), AssistsServiceListener {
             FragmentUtils.findFragment(supportFragmentManager, PluginPlatformFragment::class.java)?.let {
                 FragmentUtils.remove(it)
             }
-            FragmentUtils.add(supportFragmentManager, MainFragment(), R.id.fl_container)
-
+            if (FragmentUtils.findFragment(supportFragmentManager, MainFragment::class.java) == null) {
+                FragmentUtils.add(supportFragmentManager, MainFragment(), R.id.fl_container)
+                LogUtils.d("add MainFragment")
+            }
         }
     }
 
