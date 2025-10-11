@@ -64,6 +64,9 @@ open class InstalledPluginsFragment : Fragment() {
     private val tempDir: File by lazy { File(context?.cacheDir, "temp_plugins").apply { mkdirs() } }
     private val pluginsDir: File by lazy { File(context?.filesDir, "plugins").apply { mkdirs() } }
 
+    protected var defaultAssetsPlugin = "assistsx-simple"
+    var pluginList = listOf<Plugin>()
+
     // 注册文件选择结果处理器
     private val pickPluginFile = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
@@ -219,12 +222,12 @@ open class InstalledPluginsFragment : Fragment() {
         return bottomSheet
     }
 
-    private fun handleLocalInstall() {
+    open fun handleLocalInstall() {
         // 启动文件选择器，支持选择 zip 文件
         pickPluginFile.launch("application/zip")
     }
 
-    private fun handleSelectedPluginFile(uri: Uri) {
+    open fun handleSelectedPluginFile(uri: Uri) {
         // 获取文件名
         val fileName = context?.contentResolver?.query(uri, null, null, null, null)?.use { cursor ->
             val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
@@ -270,7 +273,7 @@ open class InstalledPluginsFragment : Fragment() {
         }
     }
 
-    private suspend fun installPlugin(uri: Uri, fileName: String, progressDialog: AlertDialog) {
+    open suspend fun installPlugin(uri: Uri, fileName: String, progressDialog: AlertDialog) {
         withContext(Dispatchers.IO) {
             // 将tempFile声明移到try块外部
             val tempFile = File(tempDir, "temp_plugin.zip")
@@ -359,7 +362,7 @@ open class InstalledPluginsFragment : Fragment() {
         }
     }
 
-    private fun readPackageNameFromConfig(configFile: File): String {
+    open fun readPackageNameFromConfig(configFile: File): String {
         return try {
             val jsonString = FileReader(configFile).use { it.readText() }
             val jsonObject = JSONObject(jsonString)
@@ -370,7 +373,7 @@ open class InstalledPluginsFragment : Fragment() {
         }
     }
 
-    private suspend fun unzipFile(zipFile: File, targetDirectory: File, progressDialog: AlertDialog, isTemp: Boolean) {
+    open suspend fun unzipFile(zipFile: File, targetDirectory: File, progressDialog: AlertDialog, isTemp: Boolean) {
         withContext(Dispatchers.IO) {
             ZipInputStream(zipFile.inputStream().buffered()).use { zipInputStream ->
                 var zipEntry = zipInputStream.nextEntry
@@ -405,13 +408,13 @@ open class InstalledPluginsFragment : Fragment() {
         }
     }
 
-    private suspend fun updateProgressDialog(dialog: AlertDialog, message: String) {
+    open suspend fun updateProgressDialog(dialog: AlertDialog, message: String) {
         withContext(Dispatchers.Main) {
             dialog.findViewById<TextView>(R.id.progress_message)?.text = message
         }
     }
 
-    private fun formatFileSize(size: Long): String {
+    open fun formatFileSize(size: Long): String {
         return when {
             size < 1024 -> "$size B"
             size < 1024 * 1024 -> "${size / 1024} KB"
@@ -419,17 +422,17 @@ open class InstalledPluginsFragment : Fragment() {
         }
     }
 
-    private fun handleLanScan() {
+    open fun handleLanScan() {
         // 直接使用已注册的scanLauncher
         scanLauncher.launch(Intent(context, ScanActivity::class.java))
     }
 
-    private fun handleAddOnlinePlugin() {
+    open fun handleAddOnlinePlugin() {
         // 显示URL输入弹窗
         showUrlInputDialog()
     }
 
-    private fun showUrlInputDialog() {
+    open fun showUrlInputDialog() {
         // 创建输入框布局
         val inputLayout = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
@@ -463,7 +466,7 @@ open class InstalledPluginsFragment : Fragment() {
             .show()
     }
 
-    private fun handleOnlinePluginInstall(url: String) {
+    open fun handleOnlinePluginInstall(url: String) {
         // 显示进度对话框
         val progressDialog = MaterialAlertDialogBuilder(requireContext())
             .setTitle("正在添加在线插件")
@@ -522,11 +525,12 @@ open class InstalledPluginsFragment : Fragment() {
         }
     }
 
-    private fun loadInstalledPlugins() {
+    open fun loadInstalledPlugins() {
         try {
             val pluginsJson = SPUtils.getInstance().getString(SPKeys.INSTALLED_PLUGINS, "[]")
             val pluginsArray = GsonUtils.fromJson<List<Plugin>>(pluginsJson, GsonUtils.getListType(Plugin::class.java))
-            pluginAdapter.submitList(pluginsArray.reversed())
+            pluginList = pluginsArray.reversed()
+            pluginAdapter.submitList(pluginList)
             // 更新空状态显示
             updateEmptyState(pluginsArray)
         } catch (e: Exception) {
@@ -539,12 +543,12 @@ open class InstalledPluginsFragment : Fragment() {
         }
     }
 
-    private fun refreshPluginList() {
+    open fun refreshPluginList() {
         // 重新加载插件列表
         loadInstalledPlugins()
     }
 
-    private fun updateEmptyState(plugins: List<Plugin>) {
+    open fun updateEmptyState(plugins: List<Plugin>) {
         binding.layoutEmpty.visibility = if (plugins.isEmpty()) View.VISIBLE else View.GONE
         binding.swipeRefreshLayout.visibility = if (plugins.isNotEmpty()) View.VISIBLE else View.GONE
     }
@@ -555,7 +559,7 @@ open class InstalledPluginsFragment : Fragment() {
 
     }
 
-    private fun handlePluginAction(plugin: Plugin) {
+    open fun handlePluginAction(plugin: Plugin) {
         CoroutineWrapper.launch {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R && plugin.needScreenCapture && !MPManager.isEnable) {
                 val result = MPManager.request(autoAllow = true)
@@ -574,7 +578,7 @@ open class InstalledPluginsFragment : Fragment() {
     }
 
 
-    private fun parsePluginFromConfig(configFile: File, fileName: String, packageName: String): Plugin {
+    open fun parsePluginFromConfig(configFile: File, fileName: String, packageName: String): Plugin {
         return try {
             // 获取插件专属目录
             val pluginDir = File(pluginsDir, packageName)
@@ -751,7 +755,7 @@ open class InstalledPluginsFragment : Fragment() {
         }
     }
 
-    private fun checkFirstInstall() {
+    open fun checkFirstInstall() {
         // 检查是否是首次安装
         if (FirstInstallHelper.isFirstInstall()) {
             // 首次安装，安装默认插件
@@ -779,9 +783,9 @@ open class InstalledPluginsFragment : Fragment() {
     }
 
     /**
-     * 安装默认插件（assistsx-simple）
+     * 安装默认插件
      */
-    private suspend fun installDefaultPlugin() {
+    open suspend fun installDefaultPlugin() {
         withContext(Dispatchers.IO) {
             try {
                 // 先读取配置文件获取插件信息
@@ -796,14 +800,16 @@ open class InstalledPluginsFragment : Fragment() {
                 }
 
                 // 从assets目录复制默认插件文件
-                copyAssetsToPluginDir("assistsx-simple", pluginDir)
+                copyAssetsToPluginDir(defaultAssetsPlugin, pluginDir)
 
                 // 从配置文件创建默认插件对象
                 val defaultPlugin = Plugin(
                     id = UUID.randomUUID().toString(),
-                    name = configJson.getString("name"),
-                    version = configJson.getString("version"),
-                    description = configJson.getString("description"),
+                    name = configJson.optString("name", ""),
+                    version = configJson.optString("version", ""),
+                    versionName = configJson.optString("versionName", ""),
+                    versionCode = configJson.optInt("versionCode", 0),
+                    description = configJson.optString("description", ""),
                     path = pluginDir.absolutePath,
                     packageName = packageName,
                     isShowOverlay = configJson.optBoolean("isShowOverlay", false),
@@ -827,13 +833,13 @@ open class InstalledPluginsFragment : Fragment() {
     private fun readDefaultPluginConfig(): JSONObject {
         return try {
             val assetManager = context?.assets ?: throw Exception("无法获取AssetManager")
-            val configContent = assetManager.open("assistsx-simple/assistsx_plugin_config.json").use { inputStream ->
+            val configContent = assetManager.open("$defaultAssetsPlugin/assistsx_plugin_config.json").use { inputStream ->
                 inputStream.bufferedReader().use { it.readText() }
             }
             val configJson = JSONObject(configContent)
 
             // 验证必需字段
-            val requiredFields = listOf("name", "version", "description", "packageName")
+            val requiredFields = listOf("name", "versionCode", "description", "packageName")
             for (field in requiredFields) {
                 if (!configJson.has(field) || configJson.getString(field).isBlank()) {
                     throw Exception("配置文件缺少必需字段：$field")
