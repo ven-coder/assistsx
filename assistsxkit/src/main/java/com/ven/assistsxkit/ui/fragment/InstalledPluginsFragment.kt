@@ -57,18 +57,18 @@ import kotlinx.coroutines.delay
 open class InstalledPluginsFragment : Fragment() {
 
     private val _binding: FragmentInstalledPluginsBinding by lazy { FragmentInstalledPluginsBinding.inflate(layoutInflater, null, false) }
-    private val binding get() = _binding
-    private lateinit var pluginAdapter: InstalledPluginAdapter
+    protected val binding get() = _binding
+    protected lateinit var pluginAdapter: InstalledPluginAdapter
 
     // 添加临时目录和插件目录的引用
-    private val tempDir: File by lazy { File(context?.cacheDir, "temp_plugins").apply { mkdirs() } }
-    private val pluginsDir: File by lazy { File(context?.filesDir, "plugins").apply { mkdirs() } }
+    protected val tempDir: File by lazy { File(context?.cacheDir, "temp_plugins").apply { mkdirs() } }
+    protected val pluginsDir: File by lazy { File(context?.filesDir, "plugins").apply { mkdirs() } }
 
     protected var defaultAssetsPlugin = "assistsx-simple"
     var pluginList = listOf<Plugin>()
 
     // 注册文件选择结果处理器
-    private val pickPluginFile = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+    protected val pickPluginFile = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
             handleSelectedPluginFile(it)
         }

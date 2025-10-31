@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import androidx.core.view.isVisible
 import com.blankj.utilcode.util.ScreenUtils
+import com.ven.assists.AssistsCore
 import com.ven.assists.service.AssistsService
 import com.ven.assists.service.AssistsServiceListener
 import com.ven.assists.window.AssistsWindowManager
@@ -108,6 +109,7 @@ object OverlayWeb : AssistsServiceListener {
         assistWindowWrapper = null
         // 停止本地 HTTP 服务，释放端口
         PluginWebServerManager.stopServer()
+        AssistsCore.clearKeepScreenOn()
     }
 
 

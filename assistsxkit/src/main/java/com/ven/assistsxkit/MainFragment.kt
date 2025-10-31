@@ -37,14 +37,14 @@ import com.ven.assistsxkit.databinding.FragmentMainBinding
 import com.ven.assistsxkit.ui.PluginPlatformFragment
 import kotlinx.coroutines.delay
 
-class MainFragment : Fragment() {
-    val viewBind: FragmentMainBinding by lazy {
+open class MainFragment : Fragment() {
+    protected val viewBind: FragmentMainBinding by lazy {
         FragmentMainBinding.inflate(layoutInflater).apply {
             btnEnable.setOnClickListener {
                 AssistsCore.openAccessibilitySetting()
                 startActivity(Intent(requireActivity(), SettingGuideActivity::class.java))
             }
-            tvVersion.setText("版本：${AppUtils.getAppVersionName()}")
+            tvVersion.setText("版本：${AppUtils.getAppVersionName()}+${AppUtils.getAppVersionCode()}")
         }
     }
 
