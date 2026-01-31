@@ -49,7 +49,7 @@ dependencies {
 //    api "com.github.ven-coder:assists-base:3.2.215"
 //    api "com.github.ven-coder:assists-mp:3.2.215"
 //    api "com.github.ven-coder:assists-ime:0.0.1"
-    api "com.github.ven-coder:assists-web:0.0.24-SNAPSHOT"
+//    api "com.github.ven-coder:assists-web:0.0.24-SNAPSHOT"
     implementation "androidx.room:room-runtime:${rootProject.ext.roomVersion}"
     implementation "androidx.room:room-ktx:${rootProject.ext.roomVersion}"
     kapt "androidx.room:room-compiler:${rootProject.ext.roomVersion}"
