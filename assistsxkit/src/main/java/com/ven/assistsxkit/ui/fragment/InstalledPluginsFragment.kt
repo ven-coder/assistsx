@@ -32,6 +32,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
 import com.blankj.utilcode.util.SPUtils
+import com.blankj.utilcode.util.ToastUtils
 import com.google.android.material.textfield.TextInputEditText
 import com.ven.assistsxkit.model.Plugin
 import com.ven.assistsxkit.overlays.OverlayWeb
@@ -250,114 +251,152 @@ open class InstalledPluginsFragment : Fragment() {
             return
         }
 
-        // 显示进度对话框
-        val progressDialog = MaterialAlertDialogBuilder(requireContext())
-            .setTitle("正在安装插件")
-            .setMessage("正在处理：${fileName.first}")
-            .setCancelable(false)
-            .setView(R.layout.dialog_progress)
-            .create()
 
-        progressDialog.show()
 
         // 在后台线程处理文件
-        lifecycleScope.launch(Dispatchers.IO) {
+        CoroutineWrapper.launch(false) {
+            val dialog = runMain {
+                // 显示进度对话框
+                val progressDialog = MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("正在安装插件")
+                    .setMessage("正在处理：${fileName.first}")
+                    .setCancelable(false)
+                    .setView(R.layout.dialog_progress)
+                    .create()
+
+                progressDialog.show()
+                return@runMain progressDialog
+            }
             try {
-                installPlugin(uri, fileName.first, progressDialog)
+                installPlugin(uri, fileName.first, dialog)
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    progressDialog.dismiss()
-                    Toast.makeText(context, "插件安装失败：${e.message}", Toast.LENGTH_SHORT).show()
+                    dialog.dismiss()
+                    ToastUtils.showShort("插件安装失败：${e.message}")
                 }
             }
         }
     }
 
     open suspend fun installPlugin(uri: Uri, fileName: String, progressDialog: AlertDialog) {
-        withContext(Dispatchers.IO) {
-            // 将tempFile声明移到try块外部
-            val tempFile = File(tempDir, "temp_plugin.zip")
-            val tempUnzipDir = File(tempDir, "temp_unzip")
+// 将tempFile声明移到try块外部
+        val tempFile = File(tempDir, "temp_plugin.zip")
+        val tempUnzipDir = File(tempDir, "temp_unzip")
 
-            try {
-                // 使用类属性的tempDir和pluginsDir
-                tempDir.mkdirs()
-                pluginsDir.mkdirs()
+        try {
+            // 使用类属性的tempDir和pluginsDir
+            tempDir.mkdirs()
+            pluginsDir.mkdirs()
 
-                // 清理可能存在的旧文件
-                if (tempFile.exists()) {
-                    tempFile.delete()
-                }
-
-                // 更新进度提示
-                updateProgressDialog(progressDialog, "正在复制文件...")
-
-                // 2. 复制文件到临时目录
-                context?.contentResolver?.openInputStream(uri)?.use { input ->
-                    tempFile.outputStream().buffered().use { output ->
-                        input.copyTo(output)
-                    }
-                }
-
-                // 3. 先解压到临时目录读取配置文件
-                tempUnzipDir.apply {
-                    if (exists()) deleteRecursively()
-                    mkdirs()
-                }
-
-                updateProgressDialog(progressDialog, "正在读取插件信息...")
-
-                // 临时解压以读取配置文件
-                unzipFile(tempFile, tempUnzipDir, progressDialog, isTemp = true)
-
-                // 查找并读取配置文件
-                val configFile = findConfigFile(tempUnzipDir)
-                    ?: throw Exception("未找到有效的插件配置文件")
-
-                // 读取配置获取packageName
-                val packageName = readPackageNameFromConfig(configFile)
-
-                // 4. 创建插件专属目录
-                val pluginDir = File(pluginsDir, packageName).apply {
-                    if (exists()) {
-                        // 如果目录已存在，先删除旧版本
-                        deleteRecursively()
-                    }
-                    mkdirs()
-                }
-
-                // 5. 解压插件到最终目录
-                updateProgressDialog(progressDialog, "正在安装插件...")
-                unzipFile(tempFile, pluginDir, progressDialog, isTemp = false)
-
-                // 6. 清理临时文件
+            // 清理可能存在的旧文件
+            if (tempFile.exists()) {
                 tempFile.delete()
+            }
+
+            // 更新进度提示
+            updateProgressDialog(progressDialog, "正在复制文件...")
+
+            // 2. 复制文件到临时目录
+            context?.contentResolver?.openInputStream(uri)?.use { input ->
+                tempFile.outputStream().buffered().use { output ->
+                    input.copyTo(output)
+                }
+            }
+
+            // 3. 先解压到临时目录读取配置文件
+            tempUnzipDir.apply {
+                if (exists()) deleteRecursively()
+                mkdirs()
+            }
+
+            updateProgressDialog(progressDialog, "正在读取插件信息...")
+
+            // 临时解压以读取配置文件
+            unzipFile(tempFile, tempUnzipDir, progressDialog, isTemp = true)
+
+            // 查找并读取配置文件，失败则使用 fileName 作为 packageName
+            val configFile = findConfigFile(tempUnzipDir)
+            var packageName: String
+            var useDefaultPlugin: Boolean
+            if (configFile != null) {
+                try {
+                    packageName = readPackageNameFromConfig(configFile)
+                    useDefaultPlugin = false
+                } catch (e: Exception) {
+                    packageName = sanitizeFileNameToPackageName(fileName)
+                    useDefaultPlugin = true
+                }
+            } else {
+                packageName = sanitizeFileNameToPackageName(fileName)
+                useDefaultPlugin = true
+            }
+
+            // 4. 创建插件专属目录
+            val pluginDir = File(pluginsDir, packageName).apply {
+                if (exists()) {
+                    // 如果目录已存在，先删除旧版本
+                    deleteRecursively()
+                }
+                mkdirs()
+            }
+
+            // 5. 解压插件到最终目录
+            updateProgressDialog(progressDialog, "正在安装插件...")
+            unzipFile(tempFile, pluginDir, progressDialog, isTemp = false)
+
+            // 6. 清理临时文件
+            tempFile.delete()
+            tempUnzipDir.deleteRecursively()
+
+            // 7. 创建插件对象并保存
+            val displayName = fileName.removeSuffix(".zip").removeSuffix(".ZIP")
+            val plugin = if (useDefaultPlugin) {
+                val index = findIndexInPluginDir(pluginDir)
+                Plugin(
+                    id = UUID.randomUUID().toString(),
+                    name = displayName,
+                    version = "1.0.0",
+                    versionName = "1.0.0",
+                    description = displayName,
+                    path = pluginDir.absolutePath,
+                    index = index,
+                    indexInOverlay = true,
+                    packageName = packageName
+                )
+            } else {
+                val parsed = parsePluginFromConfig(findConfigFile(pluginDir)!!, fileName, packageName)
+                // 与 handleOnlinePluginInstall 一致：字段无效时赋默认值；index 无效则扫描目录
+                val indexValue = parsed.index.takeIf { !it.isNullOrBlank() } ?: findIndexInPluginDir(pluginDir)
+                parsed.copy(
+                    name = parsed.name.takeIf { it.isNotBlank() } ?: displayName,
+                    description = parsed.description.takeIf { it.isNotBlank() } ?: displayName,
+                    packageName = parsed.packageName.takeIf { it.isNotBlank() } ?: packageName,
+                    version = parsed.version.takeIf { it.isNotBlank() } ?: "1.0.0",
+                    versionName = parsed.versionName.takeIf { it.isNotBlank() } ?: "1.0.0",
+                    index = indexValue
+                )
+            }
+            savePlugin(plugin)
+
+            // 在主线程更新UI
+            withContext(Dispatchers.Main) {
+                progressDialog.dismiss()
+                Toast.makeText(context, "插件安装成功", Toast.LENGTH_SHORT).show()
+                // 刷新插件列表
+                loadInstalledPlugins()
+            }
+
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) {
+                progressDialog.dismiss()
+                Toast.makeText(context, "插件安装失败：${e.message}", Toast.LENGTH_SHORT).show()
+            }
+            // 清理失败的安装文件和临时文件
+            if (tempUnzipDir.exists()) {
                 tempUnzipDir.deleteRecursively()
-
-                // 7. 创建插件对象并保存
-                val plugin = parsePluginFromConfig(configFile, fileName, packageName)
-                savePlugin(plugin)
-
-                // 在主线程更新UI
-                withContext(Dispatchers.Main) {
-                    progressDialog.dismiss()
-                    Toast.makeText(context, "插件安装成功", Toast.LENGTH_SHORT).show()
-                    // 刷新插件列表
-                    loadInstalledPlugins()
-                }
-
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    progressDialog.dismiss()
-                    Toast.makeText(context, "插件安装失败：${e.message}", Toast.LENGTH_SHORT).show()
-                }
-                // 清理失败的安装文件和临时文件
-                if (tempUnzipDir.exists()) {
-                    tempUnzipDir.deleteRecursively()
-                }
-                if (tempFile.exists()) {
-                    tempFile.delete()
-                }
+            }
+            if (tempFile.exists()) {
+                tempFile.delete()
             }
         }
     }
@@ -373,37 +412,68 @@ open class InstalledPluginsFragment : Fragment() {
         }
     }
 
-    open suspend fun unzipFile(zipFile: File, targetDirectory: File, progressDialog: AlertDialog, isTemp: Boolean) {
-        withContext(Dispatchers.IO) {
-            ZipInputStream(zipFile.inputStream().buffered()).use { zipInputStream ->
-                var zipEntry = zipInputStream.nextEntry
-                var extractedFiles = 0
+    /** 从文件名生成有效的 packageName（用于目录名） */
+    open fun sanitizeFileNameToPackageName(fileName: String): String {
+        return fileName.removeSuffix(".zip").removeSuffix(".ZIP")
+            .replace(Regex("[^a-zA-Z0-9._-]"), "_")
+            .ifEmpty { "plugin" }
+    }
 
-                while (zipEntry != null) {
-                    val newFile = File(targetDirectory, zipEntry.name)
+    /**
+     * 扫描插件目录获取 index 值：优先 index.html，否则第一个 html 文件，都没有则抛出异常
+     */
+    open fun findIndexInPluginDir(pluginDir: File): String {
+        val indexHtmlPaths = mutableListOf<String>()
+        val allHtmlPaths = mutableListOf<String>()
 
-                    // 安全检查：确保解压的文件路径在目标目录内
-                    if (!newFile.canonicalPath.startsWith(targetDirectory.canonicalPath)) {
-                        throw SecurityException("发现潜在的安全风险：检测到路径穿越攻击")
-                    }
-
-                    if (zipEntry.isDirectory) {
-                        newFile.mkdirs()
-                    } else {
-                        newFile.parentFile?.mkdirs()
-                        newFile.outputStream().buffered().use { output ->
-                            zipInputStream.copyTo(output)
+        fun scan(dir: File, relativePath: String) {
+            dir.listFiles()?.forEach { file ->
+                val path = if (relativePath.isEmpty()) file.name else "$relativePath/${file.name}"
+                when {
+                    file.isDirectory -> scan(file, path)
+                    file.isFile && file.name.endsWith(".html", ignoreCase = true) -> {
+                        allHtmlPaths.add(path)
+                        if (file.name.equals("index.html", ignoreCase = true)) {
+                            indexHtmlPaths.add(path)
                         }
                     }
-
-                    extractedFiles++
-                    // 更新解压进度
-                    if (!isTemp) {
-                        updateProgressDialog(progressDialog, "正在解压文件: $extractedFiles 个文件已处理")
-                    }
-
-                    zipEntry = zipInputStream.nextEntry
                 }
+            }
+        }
+        scan(pluginDir, "")
+        return indexHtmlPaths.firstOrNull() ?: allHtmlPaths.firstOrNull()
+        ?: throw Exception("插件添加失败")
+    }
+
+    open suspend fun unzipFile(zipFile: File, targetDirectory: File, progressDialog: AlertDialog, isTemp: Boolean) {
+        ZipInputStream(zipFile.inputStream().buffered()).use { zipInputStream ->
+            var zipEntry = zipInputStream.nextEntry
+            var extractedFiles = 0
+
+            while (zipEntry != null) {
+                val newFile = File(targetDirectory, zipEntry.name)
+
+                // 安全检查：确保解压的文件路径在目标目录内
+                if (!newFile.canonicalPath.startsWith(targetDirectory.canonicalPath)) {
+                    throw SecurityException("发现潜在的安全风险：检测到路径穿越攻击")
+                }
+
+                if (zipEntry.isDirectory) {
+                    newFile.mkdirs()
+                } else {
+                    newFile.parentFile?.mkdirs()
+                    newFile.outputStream().buffered().use { output ->
+                        zipInputStream.copyTo(output)
+                    }
+                }
+
+                extractedFiles++
+                // 更新解压进度
+                if (!isTemp) {
+                    updateProgressDialog(progressDialog, "正在解压文件: $extractedFiles 个文件已处理")
+                }
+
+                zipEntry = zipInputStream.nextEntry
             }
         }
     }
@@ -479,47 +549,94 @@ open class InstalledPluginsFragment : Fragment() {
 
         // 在后台线程处理网络请求
         lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                // 确保URL格式正确
-                val baseUrl = if (url.endsWith("/")) url.dropLast(1) else url
-                val configUrl = "$baseUrl/assistsx_plugin_config.json"
+            val baseUrl = if (url.endsWith("/")) url.dropLast(1) else url
+            val configUrls = listOf(
+                "$baseUrl/config.json",
+                "$baseUrl/assistsx_plugin_config.json"
+            )
 
-                // 使用OkGo请求配置文件
-                val response = com.lzy.okgo.OkGo.get<String>(configUrl).execute()
-
-                if (response.isSuccessful) {
-                    response.body?.string()?.let { jsonString ->
-                        // 解析配置文件
-                        val plugin = GsonUtils.fromJson(jsonString, Plugin::class.java)
-
-                        // 生成唯一ID并设置路径为URL
-                        plugin.id = UUID.randomUUID().toString()
-                        plugin.path = baseUrl
-
-                        // 保存插件信息
-                        savePlugin(plugin)
-
-                        // 在主线程更新UI
-                        withContext(Dispatchers.Main) {
-                            progressDialog.dismiss()
-                            Toast.makeText(context, "在线插件添加成功", Toast.LENGTH_SHORT).show()
-                            // 刷新插件列表
-                            loadInstalledPlugins()
+            var plugin: Plugin? = null
+            for (configUrl in configUrls) {
+                try {
+                    val response = com.lzy.okgo.OkGo.get<String>(configUrl).execute()
+                    if (response.isSuccessful) {
+                        val jsonString = response.body?.string()
+                        if (!jsonString.isNullOrBlank()) {
+                            val parsed = GsonUtils.fromJson(jsonString, Plugin::class.java)
+                            // 生成有效的 packageName（用于目录名）
+                            val sanitizedPackageName = baseUrl
+                                .replace("https://", "")
+                                .replace("http://", "")
+                                .replace("/", ".")
+                                .replace(":", "_")
+                                .replace(Regex("[^a-zA-Z0-9._-]"), "_")
+                                .ifEmpty { "online_plugin" }
+                            plugin = parsed.copy(
+                                id = UUID.randomUUID().toString(),
+                                path = baseUrl,
+                                name = parsed.name.takeIf { it.isNotBlank() } ?: baseUrl,
+                                description = parsed.description.takeIf { it.isNotBlank() } ?: baseUrl,
+                                packageName = parsed.packageName.takeIf { it.isNotBlank() } ?: sanitizedPackageName,
+                                version = parsed.version.takeIf { it.isNotBlank() } ?: "1.0.0",
+                                versionName = parsed.versionName.takeIf { it.isNotBlank() } ?: "1.0.0"
+                            )
+                            break
                         }
-                    } ?: throw Exception("配置文件内容为空")
-                } else {
-                    throw Exception("无法获取插件配置文件，HTTP状态码：${response.code}")
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    progressDialog.dismiss()
-                    val errorMessage = when {
-                        e.message?.contains("timeout", ignoreCase = true) == true -> "连接超时，请检查URL是否正确"
-                        e.message?.contains("404", ignoreCase = true) == true -> "未找到插件配置文件，请确认URL正确"
-                        e.message?.contains("connection", ignoreCase = true) == true -> "网络连接失败，请检查网络状态"
-                        else -> "添加在线插件失败：${e.message}"
                     }
-                    Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
+                } catch (e: Exception) {
+                    // 当前 URL 失败，尝试下一个
+                    continue
+                }
+            }
+
+            if (plugin != null) {
+                try {
+                    savePlugin(plugin)
+                    withContext(Dispatchers.Main) {
+                        progressDialog.dismiss()
+                        Toast.makeText(context, "在线插件添加成功", Toast.LENGTH_SHORT).show()
+                        loadInstalledPlugins()
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        progressDialog.dismiss()
+                        Toast.makeText(context, "保存插件失败：${e.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+            } else {
+                // 两个配置文件都请求失败，创建默认插件并保存
+                try {
+                    val sanitizedPackageName = baseUrl
+                        .replace("https://", "")
+                        .replace("http://", "")
+                        .replace("/", ".")
+                        .replace(":", "_")
+                        .replace(Regex("[^a-zA-Z0-9._-]"), "_")
+                        .ifEmpty { "online_plugin" }
+
+                    val defaultPlugin = Plugin(
+                        id = UUID.randomUUID().toString(),
+                        name = baseUrl,
+                        version = "1.0.0",
+                        versionName = "1.0.0",
+                        description = baseUrl,
+                        path = baseUrl,
+                        indexInOverlay = true,
+                        packageName = sanitizedPackageName
+                    )
+
+                    savePlugin(defaultPlugin)
+
+                    withContext(Dispatchers.Main) {
+                        progressDialog.dismiss()
+                        Toast.makeText(context, "配置获取失败，已使用默认配置添加在线插件", Toast.LENGTH_LONG).show()
+                        loadInstalledPlugins()
+                    }
+                } catch (saveException: Exception) {
+                    withContext(Dispatchers.Main) {
+                        progressDialog.dismiss()
+                        Toast.makeText(context, "保存默认插件失败：${saveException.message}", Toast.LENGTH_LONG).show()
+                    }
                 }
             }
         }
