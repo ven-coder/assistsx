@@ -63,6 +63,14 @@ class IndexActivity : AppCompatActivity() {
 //                AssistsWindowManager.removeAllWindow()
 //                PluginWebServerManager.stopServer()
 //                finish()
+                val fragment = FragmentUtils.findFragment(supportFragmentManager, IndexFragment::class.java)
+                if (fragment is IndexFragment) {
+                    fragment.binding.webView.apply {
+                        if (canGoBack()) {
+                            goBack()
+                        }
+                    }
+                }
             }
         })
     }

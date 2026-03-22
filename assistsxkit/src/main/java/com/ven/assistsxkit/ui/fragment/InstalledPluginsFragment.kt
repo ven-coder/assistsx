@@ -35,6 +35,8 @@ import com.blankj.utilcode.util.SPUtils
 import com.blankj.utilcode.util.ToastUtils
 import com.google.android.material.textfield.TextInputEditText
 import com.ven.assistsxkit.model.Plugin
+import com.ven.assistsxkit.model.createDefaultRemotePlugin
+import com.ven.assistsxkit.model.withRemoteDefaults
 import com.ven.assistsxkit.overlays.OverlayWeb
 import com.ven.assists.utils.CoroutineWrapper
 import com.ven.assists.utils.runMain
@@ -551,8 +553,9 @@ open class InstalledPluginsFragment : Fragment() {
         lifecycleScope.launch(Dispatchers.IO) {
             val baseUrl = if (url.endsWith("/")) url.dropLast(1) else url
             val configUrls = listOf(
-                "$baseUrl/config.json",
-                "$baseUrl/assistsx_plugin_config.json"
+                "$baseUrl/assistsx_plugin_config.json",
+                "$baseUrl/plugin.json",
+                "$baseUrl/config.json"
             )
 
             var plugin: Plugin? = null
@@ -563,22 +566,8 @@ open class InstalledPluginsFragment : Fragment() {
                         val jsonString = response.body?.string()
                         if (!jsonString.isNullOrBlank()) {
                             val parsed = GsonUtils.fromJson(jsonString, Plugin::class.java)
-                            // 生成有效的 packageName（用于目录名）
-                            val sanitizedPackageName = baseUrl
-                                .replace("https://", "")
-                                .replace("http://", "")
-                                .replace("/", ".")
-                                .replace(":", "_")
-                                .replace(Regex("[^a-zA-Z0-9._-]"), "_")
-                                .ifEmpty { "online_plugin" }
-                            plugin = parsed.copy(
-                                id = UUID.randomUUID().toString(),
-                                path = baseUrl,
-                                name = parsed.name.takeIf { it.isNotBlank() } ?: baseUrl,
-                                description = parsed.description.takeIf { it.isNotBlank() } ?: baseUrl,
-                                packageName = parsed.packageName.takeIf { it.isNotBlank() } ?: sanitizedPackageName,
-                                version = parsed.version.takeIf { it.isNotBlank() } ?: "1.0.0",
-                                versionName = parsed.versionName.takeIf { it.isNotBlank() } ?: "1.0.0"
+                            plugin = parsed.withRemoteDefaults(baseUrl).copy(
+                                id = UUID.randomUUID().toString()
                             )
                             break
                         }
@@ -604,25 +593,11 @@ open class InstalledPluginsFragment : Fragment() {
                     }
                 }
             } else {
-                // 两个配置文件都请求失败，创建默认插件并保存
+                // 所有配置文件都请求失败，创建默认插件并保存
                 try {
-                    val sanitizedPackageName = baseUrl
-                        .replace("https://", "")
-                        .replace("http://", "")
-                        .replace("/", ".")
-                        .replace(":", "_")
-                        .replace(Regex("[^a-zA-Z0-9._-]"), "_")
-                        .ifEmpty { "online_plugin" }
-
-                    val defaultPlugin = Plugin(
-                        id = UUID.randomUUID().toString(),
-                        name = baseUrl,
-                        version = "1.0.0",
-                        versionName = "1.0.0",
-                        description = baseUrl,
-                        path = baseUrl,
-                        indexInOverlay = true,
-                        packageName = sanitizedPackageName
+                    val defaultPlugin = createDefaultRemotePlugin(
+                        baseUrl = baseUrl,
+                        id = UUID.randomUUID().toString()
                     )
 
                     savePlugin(defaultPlugin)

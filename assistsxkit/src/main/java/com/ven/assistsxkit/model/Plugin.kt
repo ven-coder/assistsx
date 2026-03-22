@@ -1,6 +1,5 @@
 package com.ven.assistsxkit.model
 
-import com.google.gson.annotations.SerializedName
 import com.ven.assistsxkit.db.entity.PluginEntity
 import com.ven.assistsxkit.server.PluginWebServerManager
 import java.io.Serializable
@@ -57,4 +56,39 @@ fun Plugin.getDomain(): String {
     } else {
         "http://127.0.0.1:$port"
     }
+}
+
+fun sanitizeRemotePluginPackageName(baseUrl: String, fallback: String = "online_plugin"): String {
+    return baseUrl
+        .replace("https://", "")
+        .replace("http://", "")
+        .replace("/", ".")
+        .replace(":", "_")
+        .replace(Regex("[^a-zA-Z0-9._-]"), "_")
+        .ifEmpty { fallback }
+}
+
+fun Plugin.withRemoteDefaults(baseUrl: String): Plugin {
+    val sanitizedPackageName = sanitizeRemotePluginPackageName(baseUrl)
+    return copy(
+        path = baseUrl,
+        name = name.takeIf { it.isNotBlank() } ?: baseUrl,
+        description = description.takeIf { it.isNotBlank() } ?: baseUrl,
+        packageName = packageName.takeIf { it.isNotBlank() } ?: sanitizedPackageName,
+        version = version.takeIf { it.isNotBlank() } ?: "1.0.0",
+        versionName = versionName.takeIf { it.isNotBlank() } ?: "1.0.0"
+    )
+}
+
+fun createDefaultRemotePlugin(baseUrl: String, id: String = ""): Plugin {
+    return Plugin(
+        id = id,
+        name = baseUrl,
+        version = "1.0.0",
+        versionName = "1.0.0",
+        description = baseUrl,
+        path = baseUrl,
+        indexInOverlay = true,
+        packageName = sanitizeRemotePluginPackageName(baseUrl)
+    )
 }

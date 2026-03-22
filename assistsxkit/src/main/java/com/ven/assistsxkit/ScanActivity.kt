@@ -8,9 +8,9 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.graphics.toColorInt
+import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -19,35 +19,42 @@ import com.blankj.utilcode.util.BarUtils
 import com.blankj.utilcode.util.GsonUtils
 import com.blankj.utilcode.util.LogUtils
 import com.blankj.utilcode.util.ToastUtils
-import com.google.android.material.button.MaterialButton
-import com.lzy.okgo.OkGo
 import com.ven.assistsxkit.model.Plugin
+import com.ven.assistsxkit.model.createDefaultRemotePlugin
+import com.ven.assistsxkit.model.withRemoteDefaults
 import com.ven.assists.utils.CoroutineWrapper
 import com.ven.assists.utils.runMain
 import com.ven.assistsxkit.common.GlideApp
 import com.ven.assistsxkit.databinding.ActivityScanBinding
-import com.ven.assistsxkit.databinding.ItemListPluginScanBinding
+import com.ven.assistsxkit.databinding.ItemPluginBinding
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.isActive
-import java.net.InetSocketAddress
-import java.net.Socket
-import androidx.core.net.toUri
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicInteger
 import android.content.Intent
-import android.util.Log
 import com.blankj.utilcode.util.KeyboardUtils
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.ven.assistsxkit.databinding.ItemPluginBinding
-import kotlinx.coroutines.CancellationException
-import java.util.concurrent.atomic.AtomicInteger
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.net.InetSocketAddress
+import java.net.Socket
 import java.util.concurrent.TimeUnit
 
 class ScanActivity : AppCompatActivity() {
     private var scanJob: Job? = null
+    private val httpClient by lazy {
+        OkHttpClient.Builder()
+            .connectTimeout(SOCKET_TIMEOUT_MS.toLong(), TimeUnit.MILLISECONDS)
+            .callTimeout(HTTP_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+            .readTimeout(HTTP_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+            .writeTimeout(HTTP_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+            .build()
+    }
     private val viewBind by lazy {
         ActivityScanBinding.inflate(layoutInflater).apply {
 
@@ -125,6 +132,14 @@ class ScanActivity : AppCompatActivity() {
 
     companion object {
         private const val MENU_REFRESH = 1
+        private const val SOCKET_TIMEOUT_MS = 300
+        private const val HTTP_TIMEOUT_MS = 600L
+        private const val SCAN_WORKER_COUNT = 50
+        private val REMOTE_CONFIG_FILES = listOf(
+            "assistsx_plugin_config.json",
+            "plugin.json",
+            "config.json"
+        )
     }
 
     private fun startScan() {
@@ -193,49 +208,23 @@ class ScanActivity : AppCompatActivity() {
                 val totalIps = 254
                 val scannedCount = AtomicInteger(0)
 
-                // 使用 10 个协程并发扫描
+                // 使用固定数量协程并发扫描 IP
                 coroutineScope {
-                    repeat(50) { offset ->
+                    repeat(SCAN_WORKER_COUNT) { offset ->
                         launch {
                             var i = offset + 1
                             while (i <= totalIps && isActive) {
-                                // 当前 IP
                                 val ip = "$subnet.$i"
-                                // 尝试连接端口判断是否开放
-                                // 找到服务器，尝试获取配置
-                                val url = "http://$ip:$port"
-                                runCatching {
-                                    val request = Request.Builder().url("$url/assistsx_plugin_config.json")
-                                        .get()
-                                        .build()
-                                    val httpClient = OkHttpClient.Builder()
-                                        .callTimeout(500, TimeUnit.MILLISECONDS)
-                                        .readTimeout(500, TimeUnit.MILLISECONDS)
-                                        .writeTimeout(500, TimeUnit.MILLISECONDS)
-                                        .build()
-
-//                                    if (url == "http://192.168.10.236:5173") {
-//                                        LogUtils.d("扫描", url)
-//                                    }
-
-                                    val response = httpClient.newCall(request).execute()
-
-                                    if (response.isSuccessful) {
-                                        response.body?.string()?.let { jsonString ->
-                                            val config = GsonUtils.fromJson(jsonString, Plugin::class.java)
-                                            config.path = url
-                                            runMain {
-                                                scanResults.add(ScanResult(url, config))
-                                                adapter?.notifyItemInserted(scanResults.size - 1)
-                                                updateEmptyView()
-                                            }
+                                val scanResult = scanHost(ip = ip, port = port)
+                                if (scanResult != null) {
+                                    runMain {
+                                        val exists = scanResults.any { it.url == scanResult.url }
+                                        if (!exists) {
+                                            scanResults.add(scanResult)
+                                            adapter?.notifyItemInserted(scanResults.size - 1)
+                                            updateEmptyView()
                                         }
                                     }
-                                }.onFailure {
-                                    // 忽略单个 IP 扫描异常，继续下一次
-//                                    if (url == "http://192.168.10.236:5173") {
-//                                        LogUtils.d("扫描失败", url, it)
-//                                    }
                                 }
 
                                 // 更新进度
@@ -247,7 +236,7 @@ class ScanActivity : AppCompatActivity() {
                                 }
 
                                 // 递增到下一个待扫描 IP
-                                i += 50
+                                i += SCAN_WORKER_COUNT
                             }
                         }
                     }
@@ -265,6 +254,56 @@ class ScanActivity : AppCompatActivity() {
                 viewBind.layoutProgress.isVisible = false
             }
         }
+    }
+
+    private suspend fun scanHost(ip: String, port: Int): ScanResult? {
+        if (!isPortOpen(ip, port)) {
+            return null
+        }
+        val baseUrl = "http://$ip:$port"
+        val plugin = fetchRemotePlugin(baseUrl) ?: createDefaultRemotePlugin(baseUrl)
+        return ScanResult(
+            url = baseUrl,
+            plugin = plugin
+        )
+    }
+
+    private suspend fun fetchRemotePlugin(baseUrl: String): Plugin? = coroutineScope {
+        val tasks = REMOTE_CONFIG_FILES.map { fileName ->
+            async {
+                fetchPluginFromConfig(baseUrl = baseUrl, fileName = fileName)
+            }
+        }
+        tasks.awaitAll().firstOrNull { it != null }
+    }
+
+    private fun fetchPluginFromConfig(baseUrl: String, fileName: String): Plugin? {
+        return runCatching {
+            val request = Request.Builder()
+                .url("$baseUrl/$fileName")
+                .get()
+                .build()
+            httpClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    return null
+                }
+                val jsonString = response.body?.string().orEmpty()
+                if (jsonString.isBlank()) {
+                    return null
+                }
+                GsonUtils.fromJson(jsonString, Plugin::class.java)
+                    ?.withRemoteDefaults(baseUrl)
+            }
+        }.getOrNull()
+    }
+
+    private fun isPortOpen(ip: String, port: Int): Boolean {
+        return runCatching {
+            Socket().use { socket ->
+                socket.connect(InetSocketAddress(ip, port), SOCKET_TIMEOUT_MS)
+            }
+            true
+        }.getOrElse { false }
     }
 
     private fun updateEmptyView() {
@@ -298,8 +337,6 @@ class ScanActivity : AppCompatActivity() {
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val view = LayoutInflater.from(parent.context)
-                .inflate(R.layout.item_list_plugin_scan, parent, false)
             return ViewHolder(ItemPluginBinding.inflate(LayoutInflater.from(parent.context), parent, false))
         }
 
