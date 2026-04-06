@@ -9,7 +9,7 @@ import com.ven.assists.web.ASWebView
 import com.ven.assists.web.CallInterceptResult
 import com.ven.assists.web.CallMethod
 import com.ven.assists.web.CallRequest
-import com.ven.assists.web.floatingwindow.FloatCallMethod
+import com.ven.assists.web.floating.FloatCallMethod
 import com.ven.assistsxkit.model.getDomain
 import com.ven.assistsxkit.server.PluginWebServerManager
 

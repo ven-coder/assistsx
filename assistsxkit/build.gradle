@@ -47,6 +47,7 @@ dependencies {
 
     api "com.github.ven-coder:assists-base:3.2.218"
     api "com.github.ven-coder:assists-mp:3.2.218"
+    api "com.github.ven-coder:assists-log:3.2.218"
     api "com.github.ven-coder:assists-ime:0.0.1"
     api "com.github.ven-coder:assists-web:0.0.24-SNAPSHOT"
 
