@@ -37,6 +37,9 @@ buildscript {
         
         // 图片加载
         glideVersion = "4.15.1"
+
+        // assists 系列（JitPack: com.github.ven-coder）
+        assistsVersion = "3.2.220"
         
         // Gradle 插件版本
         gradleVersion = "7.3.0"

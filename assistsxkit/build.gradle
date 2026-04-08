@@ -37,19 +37,21 @@ android {
     }
 }
 
+def assistsLocalFile = rootProject.file('assists.gradle')
+if (assistsLocalFile.exists()) {
+    apply from: assistsLocalFile
+}
+
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-//    api "com.github.ven-coder.assists:assists-base:v3.2.219"
-//    api "com.github.ven-coder.assists:assists-mp:v3.2.219"
-//    api "com.github.ven-coder.assists:assists-web:v3.2.219"
-//    api "com.github.ven-coder.assists:assists-ime:v3.2.219"
-
-    api "com.github.ven-coder:assists-base:3.2.218"
-    api "com.github.ven-coder:assists-mp:3.2.218"
-    api "com.github.ven-coder:assists-log:3.2.218"
-    api "com.github.ven-coder:assists-ime:0.0.1"
-    api "com.github.ven-coder:assists-web:0.0.24-SNAPSHOT"
+    if (!assistsLocalFile.exists()) {
+        api "com.github.ven-coder.assists:assists-base:v${rootProject.ext.assistsVersion}"
+        api "com.github.ven-coder.assists:assists-mp:v${rootProject.ext.assistsVersion}"
+        api "com.github.ven-coder.assists:assists-web:v${rootProject.ext.assistsVersion}"
+        api "com.github.ven-coder.assists:assists-ime:v${rootProject.ext.assistsVersion}"
+        api "com.github.ven-coder.assists:assists-log:v${rootProject.ext.assistsVersion}"
+    }
 
     implementation "androidx.room:room-runtime:${rootProject.ext.roomVersion}"
     implementation "androidx.room:room-ktx:${rootProject.ext.roomVersion}"

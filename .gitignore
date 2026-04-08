@@ -32,3 +32,4 @@ readme1.md
 /key.jks
 /simple/_default/release/output-metadata.json
 /app/src/main/assets/dist.zip
+assists.gradle
