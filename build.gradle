@@ -9,8 +9,8 @@ buildscript {
         targetSdk = 33
         
         // 应用版本
-        versionCode = 4
-        versionName = "0.0.3"
+        versionCode = 5
+        versionName = "0.0.3-3.2.223-x"
 
         // 依赖库版本
         coreKtxVersion = "1.13.1"
@@ -39,7 +39,7 @@ buildscript {
         glideVersion = "4.15.1"
 
         // assists 系列（JitPack: com.github.ven-coder）
-        assistsVersion = "3.2.220"
+        assistsVersion = "3.2.223"
         
         // Gradle 插件版本
         gradleVersion = "7.3.0"
