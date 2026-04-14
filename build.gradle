@@ -10,7 +10,7 @@ buildscript {
         
         // 应用版本
         versionCode = 5
-        versionName = "0.0.3-3.2.223-x"
+        versionName = "0.0.3-3.2.223-open"
 
         // 依赖库版本
         coreKtxVersion = "1.13.1"

@@ -14,7 +14,7 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="#23252A"
-            app:title="AssistsX"
+            app:title="AssistsX-Open"
             app:titleTextColor="@color/colorPrimary" />
 
         <!-- 搜索框 -->

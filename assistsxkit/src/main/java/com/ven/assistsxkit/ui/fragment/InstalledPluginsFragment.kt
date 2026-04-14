@@ -859,7 +859,7 @@ open class InstalledPluginsFragment : Fragment() {
                     FirstInstallHelper.markDefaultPluginInstalled()
 
                     withContext(Dispatchers.Main) {
-                        Toast.makeText(context, "欢迎使用AssistsX！已为您安装默认示例插件", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, "欢迎使用AssistsX-Open！已为您安装默认示例插件", Toast.LENGTH_LONG).show()
                         // 刷新插件列表
                         loadInstalledPlugins()
                     }

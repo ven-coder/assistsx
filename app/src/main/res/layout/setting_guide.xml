@@ -40,7 +40,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="5dp"
                     android:layout_marginBottom="20dp"
-                    android:text="AssistsX开启引导"
+                    android:text="AssistsX-Open开启引导"
                     android:textColor="#000000"
                     android:textSize="18sp"
                     android:textStyle="bold" />
@@ -110,7 +110,7 @@
                         android:layout_width="wrap_content"
 
                         android:layout_height="wrap_content"
-                        android:text=" AssistsX"
+                        android:text=" AssistsX-Open"
                         android:textColor="#009688"
                         android:textStyle="bold"
                         android:textSize="16sp" />
@@ -165,7 +165,7 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:padding="15dp"
-                        android:text="AssistsX"
+                        android:text="AssistsX-Open"
                         android:textColor="#000000"
                         android:textSize="16sp" />
 

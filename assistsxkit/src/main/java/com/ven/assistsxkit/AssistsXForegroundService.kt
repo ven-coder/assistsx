@@ -22,7 +22,7 @@ class AssistsXForegroundService : Service() {
 
     private fun createNotification(): Notification {
         val channelId = "assists_x_channel"
-        val channelName = "AssistsX服务"
+        val channelName = "AssistsX-Open服务"
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
