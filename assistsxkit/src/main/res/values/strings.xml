@@ -4,4 +4,9 @@
     <string name="sts_description">Assistsx-Open-STS</string>
     <string name="sas_description">Assistsx-Open-SAS</string>
     <string name="tbs_description">Assistsx-Open-TBS</string>
+    <string name="plugin_close_confirm_message">是否关闭插件？</string>
+    <string name="action_confirm">确认</string>
+    <string name="action_cancel">取消</string>
+    <string name="action_launch">启动</string>
+    <string name="action_close">关闭</string>
 </resources>

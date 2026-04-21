@@ -39,7 +39,7 @@ buildscript {
         glideVersion = "4.15.1"
 
         // assists 系列（JitPack: com.github.ven-coder）
-        assistsVersion = "3.2.223"
+        assistsVersion = "3.3.0"
         
         // Gradle 插件版本
         gradleVersion = "7.3.0"

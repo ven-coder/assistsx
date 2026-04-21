@@ -15,6 +15,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:menu="@menu/toolbar_menu"
+        app:titleCentered="true"
         app:titleTextColor="@color/colorPrimary" />
 
     <FrameLayout

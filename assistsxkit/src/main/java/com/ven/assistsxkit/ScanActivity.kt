@@ -19,6 +19,7 @@ import com.blankj.utilcode.util.BarUtils
 import com.blankj.utilcode.util.GsonUtils
 import com.blankj.utilcode.util.LogUtils
 import com.blankj.utilcode.util.ToastUtils
+import com.ven.assistsxkit.R
 import com.ven.assistsxkit.model.Plugin
 import com.ven.assistsxkit.model.createDefaultRemotePlugin
 import com.ven.assistsxkit.model.withRemoteDefaults
@@ -401,7 +402,7 @@ class ScanActivity : AppCompatActivity() {
         MaterialAlertDialogBuilder(this)
             .setTitle("插件详情")
             .setMessage(message)
-            .setPositiveButton("确定", null)
+            .setPositiveButton(R.string.action_close, null)
             .show()
     }
 

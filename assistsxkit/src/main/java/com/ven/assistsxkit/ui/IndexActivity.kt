@@ -9,6 +9,7 @@ import android.view.MenuItem
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.graphics.toColorInt
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.blankj.utilcode.util.ActivityUtils
 import com.blankj.utilcode.util.AppUtils
 import com.blankj.utilcode.util.BarUtils
@@ -37,19 +38,19 @@ class IndexActivity : AppCompatActivity() {
         BarUtils.setStatusBarLightMode(this, false)
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
-        // 设置返回按钮图标
-        binding.toolbar.setNavigationIcon(R.drawable.abc_ic_ab_back_material)
-        // 设置返回按钮颜色为colorPrimary
+        // 关闭（X）按钮
+        binding.toolbar.setNavigationIcon(R.drawable.ic_close_24)
         binding.toolbar.navigationIcon?.setTint(resources.getColor(R.color.colorPrimary, theme))
-        // 设置菜单项文字颜色
         binding.toolbar.setTitleTextColor(resources.getColor(R.color.colorPrimary, theme))
         binding.toolbar.setSubtitleTextColor(resources.getColor(R.color.colorPrimary, theme))
-        // 设置返回按钮点击事件
         binding.toolbar.setNavigationOnClickListener {
-            // 返回
-            finish()
-            AssistsWindowManager.removeAllWindow()
-            PluginWebServerManager.stopServer()
+            MaterialAlertDialogBuilder(this)
+                .setMessage(R.string.plugin_close_confirm_message)
+                .setNegativeButton(R.string.action_cancel, null)
+                .setPositiveButton(R.string.action_confirm) { _, _ ->
+                    closePluginAndFinish()
+                }
+                .show()
         }
         FragmentUtils.add(supportFragmentManager, IndexFragment.get(intent.getSerializableExtra("plugin") as Plugin).apply {
             onReceivedTitle = {
@@ -73,6 +74,13 @@ class IndexActivity : AppCompatActivity() {
                 }
             }
         })
+    }
+
+    /** 关闭插件页面并清理悬浮窗与本地服务 */
+    private fun closePluginAndFinish() {
+        finish()
+        AssistsWindowManager.removeAllWindow()
+        PluginWebServerManager.stopServer()
     }
 
 }

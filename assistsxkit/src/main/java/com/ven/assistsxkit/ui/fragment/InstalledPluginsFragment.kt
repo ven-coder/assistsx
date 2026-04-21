@@ -786,7 +786,10 @@ open class InstalledPluginsFragment : Fragment() {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("插件详情")
             .setMessage(message)
-            .setPositiveButton("确定", null)
+            .setNegativeButton(R.string.action_close, null)
+            .setPositiveButton(R.string.action_launch) { _, _ ->
+                handlePluginAction(plugin)
+            }
             .show()
     }
 
