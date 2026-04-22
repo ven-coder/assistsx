@@ -3,14 +3,18 @@
 
 buildscript {
     ext {
+
+        // 应用版本
+        versionCode = 6
+        versionName = "0.0.3-3.4.0-open"
+
+        // assists 系列（JitPack: com.github.ven-coder）
+        assistsVersion = "3.4.0"
+
         // SDK 版本
         compileSdk = 34
         minSdk = 24
         targetSdk = 33
-        
-        // 应用版本
-        versionCode = 5
-        versionName = "0.0.3-3.2.223-open"
 
         // 依赖库版本
         coreKtxVersion = "1.13.1"
@@ -37,9 +41,6 @@ buildscript {
         
         // 图片加载
         glideVersion = "4.15.1"
-
-        // assists 系列（JitPack: com.github.ven-coder）
-        assistsVersion = "3.3.0"
         
         // Gradle 插件版本
         gradleVersion = "7.3.0"
