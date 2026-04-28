@@ -12,6 +12,7 @@
     android:canRetrieveWindowContent="true"
     android:canTakeScreenshot="true"
     android:description="@string/tbs_description"
+    android:intro="@string/tbs_description"
     android:interactiveUiTimeout="100"
     android:isAccessibilityTool="true"
     android:nonInteractiveUiTimeout="100"

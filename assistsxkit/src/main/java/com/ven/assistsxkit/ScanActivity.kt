@@ -81,7 +81,7 @@ class ScanActivity : AppCompatActivity() {
         // 设置标题
         viewBind.toolbar.title = "扫描局域网插件"
         // 设置返回按钮图标
-        viewBind.toolbar.setNavigationIcon(R.drawable.abc_ic_ab_back_material)
+        viewBind.toolbar.setNavigationIcon(androidx.appcompat.R.drawable.abc_ic_ab_back_material)
         // 设置返回按钮颜色为colorPrimary
         viewBind.toolbar.navigationIcon?.setTint(resources.getColor(R.color.colorPrimary, theme))
         // 设置菜单项文字颜色

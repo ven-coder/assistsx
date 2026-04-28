@@ -1,7 +1,7 @@
 plugins {
     id 'com.android.library'
     id 'org.jetbrains.kotlin.android'
-    id 'kotlin-android'
+    id 'com.google.devtools.ksp'
     id 'kotlin-kapt'
     id 'maven-publish'
 }
@@ -31,9 +31,7 @@ android {
     }
     buildFeatures {
         dataBinding true
-    }
-    viewBinding {
-        enabled = true
+        viewBinding true
     }
 }
 
@@ -55,7 +53,7 @@ dependencies {
 
     implementation "androidx.room:room-runtime:${rootProject.ext.roomVersion}"
     implementation "androidx.room:room-ktx:${rootProject.ext.roomVersion}"
-    kapt "androidx.room:room-compiler:${rootProject.ext.roomVersion}"
+    ksp "androidx.room:room-compiler:${rootProject.ext.roomVersion}"
     implementation "com.github.mrmike:ok2curl:${rootProject.ext.ok2curlVersion}"
     implementation "com.lzy.net:okgo:${rootProject.ext.okgoVersion}"
     implementation "com.squareup.okhttp3:logging-interceptor:${rootProject.ext.okhttpLoggingVersion}"
@@ -74,10 +72,6 @@ dependencies {
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
     implementation 'org.nanohttpd:nanohttpd:2.3.1'
 }
-task sourcesJar(type: Jar) {
-    archiveClassifier.set('sources')
-    from android.sourceSets.main.java.srcDirs
-}
 afterEvaluate {
     publishing {
         publications {
@@ -85,8 +79,7 @@ afterEvaluate {
                 from components.release
                 groupId = 'com.ven.assistsxkit'
                 artifactId = 'assistsxkit'
-                version = '0.0.1'
-                artifact sourcesJar
+                version = '0.0.2'
             }
         }
     }

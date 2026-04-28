@@ -5,15 +5,23 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
 
 class AssistsXForegroundService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        startForeground(1, createNotification())
+        // API 34+ 须在 manifest 与 startForeground 中声明类型，与 assists simple ForegroundService 策略一致
+        ServiceCompat.startForeground(
+            this,
+            1,
+            createNotification(),
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+        )
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -39,6 +47,7 @@ class AssistsXForegroundService : Service() {
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
     }
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {

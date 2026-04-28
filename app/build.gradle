@@ -3,6 +3,7 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'
 
 android {
+    namespace 'com.ven.assistsx'
     compileSdk rootProject.ext.compileSdk
     defaultConfig {
         applicationId "com.ven.assistsx"

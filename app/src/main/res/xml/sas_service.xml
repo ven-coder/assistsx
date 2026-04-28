@@ -1,9 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
-    android:accessibilityEventTypes="typeAllMask"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged|typeWindowsChanged|typeNotificationStateChanged|typeViewClicked|typeViewLongClicked|typeViewSelected|typeViewFocused|typeViewTextChanged|typeViewTextSelectionChanged|typeAnnouncement|typeViewAccessibilityFocused|typeViewAccessibilityFocusCleared|typeViewTextTraversedAtMovementGranularity|typeTouchExplorationGestureStart|typeTouchExplorationGestureEnd|typeGestureDetectionStart|typeGestureDetectionEnd|typeTouchInteractionStart|typeTouchInteractionEnd|typeContextClicked|typeAssistReadingContext"
     android:accessibilityFeedbackType="feedbackAllMask"
+    android:accessibilityFlags="flagRetrieveInteractiveWindows|flagReportViewIds|flagIncludeNotImportantViews|flagRequestTouchExplorationMode|flagRequestEnhancedWebAccessibility|flagRequestFilterKeyEvents|flagRequestFingerprintGestures|flagServiceHandlesDoubleTap|flagRequestMultiFingerGestures|flagSendMotionEvents|flagEnableAccessibilityVolume|flagRequestShortcutWarningDialogSpokenFeedback"
+    android:canControlMagnification="true"
     android:canPerformGestures="true"
-    android:description="@string/sts_description"
-    android:summary="@string/sas_description"
+    android:canRequestEnhancedWebAccessibility="true"
+    android:canRequestFilterKeyEvents="true"
+    android:canRequestFingerprintGestures="true"
+    android:canRequestTouchExplorationMode="false"
     android:canRetrieveWindowContent="true"
-    android:notificationTimeout="100" />
+    android:canTakeScreenshot="true"
+    android:description="@string/sas_description"
+    android:interactiveUiTimeout="100"
+    android:isAccessibilityTool="true"
+    android:nonInteractiveUiTimeout="100"
+    android:notificationTimeout="200"
+    android:summary="@string/sas_description" />

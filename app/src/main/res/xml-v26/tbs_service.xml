@@ -10,10 +10,8 @@
     android:canRequestFingerprintGestures="true"
     android:canRequestTouchExplorationMode="false"
     android:canRetrieveWindowContent="true"
-    android:canTakeScreenshot="true"
     android:description="@string/tbs_description"
     android:interactiveUiTimeout="100"
-    android:isAccessibilityTool="true"
     android:nonInteractiveUiTimeout="100"
     android:notificationTimeout="200"
     android:summary="@string/tbs_description" />

@@ -30,7 +30,7 @@ import com.ven.assists.utils.CoroutineWrapper
 import com.ven.assistsx.databinding.ActivityMainBinding
 import com.ven.assistsxkit.AssistsXForegroundService
 import com.ven.assistsxkit.MainFragment
-import com.ven.assistsxkit.R
+import com.ven.assistsx.R
 import com.ven.assistsxkit.ScanActivity
 import com.ven.assistsxkit.SettingGuideActivity
 import kotlinx.coroutines.delay
