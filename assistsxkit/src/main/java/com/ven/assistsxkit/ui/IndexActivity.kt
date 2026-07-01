@@ -9,6 +9,8 @@ import android.view.MenuItem
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.graphics.toColorInt
+import androidx.core.view.WindowCompat
+import androidx.core.view.isInvisible
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.blankj.utilcode.util.ActivityUtils
 import com.blankj.utilcode.util.AppUtils
@@ -34,6 +36,7 @@ class IndexActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window, true)
         BarUtils.setStatusBarColor(this, "#23252A".toColorInt(), true)
         BarUtils.setStatusBarLightMode(this, false)
         setContentView(binding.root)
@@ -51,7 +54,9 @@ class IndexActivity : AppCompatActivity() {
                     closePluginAndFinish()
                 }
                 .show()
+
         }
+        binding.toolbar.isInvisible
         FragmentUtils.add(supportFragmentManager, IndexFragment.get(intent.getSerializableExtra("plugin") as Plugin).apply {
             onReceivedTitle = {
                 this@IndexActivity.binding.toolbar.title = it

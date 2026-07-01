@@ -38,6 +38,7 @@ class IndexFragment : Fragment(), AssistsServiceListener {
 
     var plugin: Plugin? = null
     var onReceivedTitle: ((title: String) -> Unit)? = null
+    private var keyboardInsetBridge: WebViewKeyboardInsetBridge? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return binding.root
@@ -73,6 +74,16 @@ class IndexFragment : Fragment(), AssistsServiceListener {
                 }
             }
         }
+        keyboardInsetBridge = WebViewKeyboardInsetBridge(
+            anchorView = requireActivity().window.decorView,
+            webView = binding.webView,
+        ).also { it.attach() }
+    }
+
+    override fun onDestroyView() {
+        keyboardInsetBridge?.detach()
+        keyboardInsetBridge = null
+        super.onDestroyView()
     }
 
     override fun onUnbind() {

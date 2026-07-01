@@ -49,6 +49,7 @@ class XWebview @JvmOverloads constructor(
                 return
             }
         }
+
         super.loadUrl(url)
     }
 }

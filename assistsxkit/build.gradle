@@ -44,11 +44,11 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     if (!assistsLocalFile.exists()) {
-        api "com.github.ven-coder.assists:assists-base:v${rootProject.ext.assistsVersion}"
-        api "com.github.ven-coder.assists:assists-mp:v${rootProject.ext.assistsVersion}"
-        api "com.github.ven-coder.assists:assists-web:v${rootProject.ext.assistsVersion}"
-        api "com.github.ven-coder.assists:assists-ime:v${rootProject.ext.assistsVersion}"
-        api "com.github.ven-coder.assists:assists-log:v${rootProject.ext.assistsVersion}"
+        api "com.github.ven-coder.Assists:assists-base:v${rootProject.ext.assistsVersion}"
+        api "com.github.ven-coder.Assists:assists-mp:v${rootProject.ext.assistsVersion}"
+        api "com.github.ven-coder.Assists:assists-web:v${rootProject.ext.assistsVersion}"
+        api "com.github.ven-coder.Assists:assists-ime:v${rootProject.ext.assistsVersion}"
+        api "com.github.ven-coder.Assists:assists-log:v${rootProject.ext.assistsVersion}"
     }
 
     implementation "androidx.room:room-runtime:${rootProject.ext.roomVersion}"
