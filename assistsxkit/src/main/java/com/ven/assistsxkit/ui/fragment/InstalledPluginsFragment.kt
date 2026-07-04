@@ -31,10 +31,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
-import com.blankj.utilcode.util.SPUtils
-import com.blankj.utilcode.util.ToastUtils
 import com.google.android.material.textfield.TextInputEditText
-import com.ven.assistsxkit.db.withDbSyncedFields
 import com.ven.assistsxkit.model.Plugin
 import com.ven.assistsxkit.model.createDefaultRemotePlugin
 import com.ven.assistsxkit.model.withRemoteDefaults
@@ -46,7 +43,7 @@ import com.ven.assistsxkit.databinding.FragmentInstalledPluginsBinding
 import java.io.FileReader
 import org.json.JSONObject
 import com.ven.assists.mp.MPManager
-import com.ven.assistsxkit.common.SPKeys
+import com.blankj.utilcode.util.ToastUtils
 import com.ven.assistsxkit.common.FirstInstallHelper
 import com.lzy.okgo.OkGo
 import com.ven.assistsxkit.App
@@ -619,20 +616,22 @@ open class InstalledPluginsFragment : Fragment() {
     }
 
     open fun loadInstalledPlugins() {
-        try {
-            val pluginsJson = SPUtils.getInstance().getString(SPKeys.INSTALLED_PLUGINS, "[]")
-            val pluginsArray = GsonUtils.fromJson<List<Plugin>>(pluginsJson, GsonUtils.getListType(Plugin::class.java))
-            pluginList = pluginsArray.reversed()
-            pluginAdapter.submitList(pluginList)
-            // 更新空状态显示
-            updateEmptyState(pluginsArray)
-        } catch (e: Exception) {
-            Toast.makeText(context, "加载插件列表失败：${e.message}", Toast.LENGTH_SHORT).show()
-            // 发生错误时也要更新空状态显示
-            updateEmptyState(emptyList())
-        } finally {
-            // 停止刷新动画
-            binding.swipeRefreshLayout.isRefreshing = false
+        lifecycleScope.launch {
+            try {
+                val pluginsArray = withContext(Dispatchers.IO) {
+                    App.pluginRepository.getAllPluginsOnce()
+                }
+                pluginList = pluginsArray
+                pluginAdapter.submitList(pluginList)
+                updateEmptyState(pluginsArray)
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "加载插件列表失败：${e.message}", Toast.LENGTH_SHORT).show()
+                }
+                updateEmptyState(emptyList())
+            } finally {
+                binding.swipeRefreshLayout.isRefreshing = false
+            }
         }
     }
 
@@ -705,34 +704,12 @@ open class InstalledPluginsFragment : Fragment() {
     }
 
     private suspend fun savePlugin(plugin: Plugin) {
-        try {
-            // 先写入 DB，获取含 port 等完整字段的对象
-            val syncedPlugin = App.pluginRepository.savePlugin(plugin)
-
-            val pluginsJson = SPUtils.getInstance().getString(SPKeys.INSTALLED_PLUGINS, "[]")
-            val pluginsArray = GsonUtils.fromJson<List<Plugin>>(pluginsJson, GsonUtils.getListType(Plugin::class.java))
-            val newPluginsArray = arrayListOf<Plugin>()
-
-            var existingFound = false
-            for (i in 0 until pluginsArray.size) {
-                val existingPackageName = pluginsArray[i].packageName
-                if (existingPackageName == syncedPlugin.packageName) {
-                    existingFound = true
-                    continue
-                }
-                newPluginsArray.add(pluginsArray[i])
+        val existing = App.pluginRepository.getPluginByPackageName(plugin.packageName)
+        App.pluginRepository.savePlugin(plugin)
+        if (existing != null) {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "已更新插件信息", Toast.LENGTH_SHORT).show()
             }
-
-            if (existingFound) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "已更新插件信息", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            newPluginsArray.add(plugin.withDbSyncedFields(syncedPlugin))
-            App.pluginRepository.savePluginsToSharedPreferences(newPluginsArray)
-        } catch (e: Exception) {
-            throw Exception("保存插件信息失败：${e.message}")
         }
     }
 
@@ -797,37 +774,15 @@ open class InstalledPluginsFragment : Fragment() {
     private fun deletePlugin(plugin: Plugin) {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                // 1. 删除插件文件
-
-
-                runCatching {
-                    App.pluginRepository.deletePluginByPackageName(plugin.packageName)
-                }
+                App.pluginRepository.deletePluginByPackageName(plugin.packageName)
 
                 val pluginDir = File(pluginsDir, plugin.packageName)
                 if (pluginDir.exists() && pluginDir.isDirectory) {
                     pluginDir.deleteRecursively()
                 }
 
-                // 2. 从已安装插件列表中移除
-                val pluginsJson = SPUtils.getInstance().getString(SPKeys.INSTALLED_PLUGINS, "[]")
-                val pluginsArray = GsonUtils.fromJson<List<Plugin>>(pluginsJson, GsonUtils.getListType(Plugin::class.java))
-                val newPluginsArray = arrayListOf<Plugin>()
-
-                for (i in 0 until pluginsArray.size) {
-                    val currentPlugin = pluginsArray[i]
-                    if (currentPlugin.packageName != plugin.packageName) {
-                        newPluginsArray.add(currentPlugin)
-                    }
-                }
-
-                // 3. 保存更新后的插件列表
-                SPUtils.getInstance().put(SPKeys.INSTALLED_PLUGINS, GsonUtils.toJson(newPluginsArray))
-
-                // 4. 在主线程更新UI
                 withContext(Dispatchers.Main) {
                     Toast.makeText(context, "插件已删除", Toast.LENGTH_SHORT).show()
-                    // 重新加载插件列表
                     loadInstalledPlugins()
                 }
             } catch (e: Exception) {

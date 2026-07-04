@@ -11,9 +11,15 @@ import kotlinx.coroutines.flow.Flow
 interface PluginDao {
     
     /**
+     * 获取所有插件（一次性查询，按更新时间倒序）
+     */
+    @Query("SELECT * FROM plugins ORDER BY updateTime DESC")
+    suspend fun getAllPluginsOnce(): List<PluginEntity>
+
+    /**
      * 获取所有插件
      */
-    @Query("SELECT * FROM plugins")
+    @Query("SELECT * FROM plugins ORDER BY updateTime DESC")
     fun getAllPlugins(): Flow<List<PluginEntity>>
     
     /**

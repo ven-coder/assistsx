@@ -5,12 +5,7 @@ package com.ven.assistsxkit.common
  * 统一管理所有SP存储的key
  */
 object SPKeys {
-    
-    /**
-     * 已安装插件列表
-     */
-    const val INSTALLED_PLUGINS = "installed_plugins"
-    
+
     /**
      * 是否首次安装应用
      */

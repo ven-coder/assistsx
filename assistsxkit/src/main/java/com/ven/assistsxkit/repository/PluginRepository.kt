@@ -1,9 +1,6 @@
 package com.ven.assistsxkit.repository
 
 import android.content.Context
-import com.blankj.utilcode.util.GsonUtils
-import com.blankj.utilcode.util.SPUtils
-import com.ven.assistsxkit.common.SPKeys
 import com.ven.assistsxkit.db.AppDatabase
 import com.ven.assistsxkit.db.entity.PluginEntity
 import com.ven.assistsxkit.db.toEntity
@@ -14,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 /**
- * Plugin 数据仓库，负责 SP 与 DB 的插件数据同步及 CRUD。
+ * Plugin 数据仓库，负责插件数据的 CRUD。
  */
 class PluginRepository(context: Context) {
 
@@ -22,41 +19,14 @@ class PluginRepository(context: Context) {
     private val pluginDao = database.pluginDao()
 
     /**
-     * 从 SP 读取已安装插件列表
+     * 获取所有插件（按更新时间倒序）
      */
-    fun getPluginsFromSharedPreferences(): List<Plugin> {
-        return runCatching {
-            val pluginsJson = SPUtils.getInstance().getString(SPKeys.INSTALLED_PLUGINS, "[]")
-            GsonUtils.fromJson<List<Plugin>>(pluginsJson, GsonUtils.getListType(Plugin::class.java))
-                ?: emptyList()
-        }.getOrDefault(emptyList())
+    suspend fun getAllPluginsOnce(): List<Plugin> {
+        return pluginDao.getAllPluginsOnce().map { it.toPlugin() }
     }
 
     /**
-     * 将插件列表写入 SP
-     */
-    fun savePluginsToSharedPreferences(plugins: List<Plugin>) {
-        SPUtils.getInstance().put(SPKeys.INSTALLED_PLUGINS, GsonUtils.toJson(plugins))
-    }
-
-    /**
-     * 启动时将 SP 数据全量同步到 DB，保证历史数据字段完整
-     */
-    suspend fun syncFromSharedPreferences() {
-        getPluginsFromSharedPreferences().forEach { plugin ->
-            insertPlugin(plugin)
-        }
-    }
-
-    /**
-     * 保存单个插件：写入 DB 并返回含 localPort 等完整对象，供回写 SP
-     */
-    suspend fun savePlugin(plugin: Plugin): Plugin {
-        return insertPlugin(plugin)
-    }
-
-    /**
-     * 获取所有插件
+     * 获取所有插件（Flow）
      */
     fun getAllPlugins(): Flow<List<Plugin>> {
         return pluginDao.getAllPlugins().map { entities ->
@@ -79,7 +49,14 @@ class PluginRepository(context: Context) {
     }
 
     /**
-     * 插入或更新插件，按路径类型写入 localPath / remoteAddress；返回含最终 localPort 的 Plugin
+     * 保存插件（插入或更新），返回含最终 localPort 的对象
+     */
+    suspend fun savePlugin(plugin: Plugin): Plugin {
+        return insertPlugin(plugin)
+    }
+
+    /**
+     * 插入或更新插件，按路径类型写入 localPath / remoteAddress
      */
     suspend fun insertPlugin(plugin: Plugin): Plugin {
         val existingPlugin = pluginDao.getPluginByPackageName(plugin.packageName)
@@ -162,7 +139,7 @@ class PluginRepository(context: Context) {
         if (plugin.port > 0 && plugin.port !in usedPorts) {
             return plugin.port
         }
-        if (existing != null && existing.localPort > 0 && existing.localPort !in usedPorts) {
+        if (existing != null && existing.localPort > 0) {
             return existing.localPort
         }
         return generateUniqueLocalPort(usedPorts)

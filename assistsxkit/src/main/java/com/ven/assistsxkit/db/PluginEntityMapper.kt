@@ -48,13 +48,3 @@ internal fun Plugin.toEntity(dbId: Long = 0, localPort: Int = -1): PluginEntity 
         localPort = if (isRemote()) -1 else localPort
     )
 }
-
-/** 将 DB 同步后的有效字段合并回 SP 对象，保留 @Deprecated 字段 */
-internal fun Plugin.withDbSyncedFields(dbPlugin: Plugin): Plugin {
-    return dbPlugin.copy(
-        version = version,
-        isShowOverlay = isShowOverlay,
-        overlayTitle = overlayTitle,
-        main = main
-    )
-}
