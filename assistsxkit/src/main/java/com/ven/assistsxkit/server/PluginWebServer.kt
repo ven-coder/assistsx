@@ -23,11 +23,11 @@ object PluginWebServerManager {
     var plugin: Plugin? = null
 
     /**
-     * 启动本地服务器。
+     * 启动本地服务器，默认使用插件在数据库中分配的 localPort（映射为 plugin.port）。
      * @return 实际启动的端口号
      */
     @Synchronized
-    fun startServer(plugin: Plugin, port: Int = DEFAULT_PORT): Int {
+    fun startServer(plugin: Plugin, port: Int = plugin.port): Int {
         // 若已有服务在运行，先停止
         stopServer()
         currentPort = port

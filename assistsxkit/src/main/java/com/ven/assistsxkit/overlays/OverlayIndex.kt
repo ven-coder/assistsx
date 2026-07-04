@@ -16,6 +16,7 @@ import com.ven.assists.window.AssistsWindowManager.overlayToast
 import com.ven.assists.window.AssistsWindowWrapper
 import com.ven.assistsxkit.databinding.WebOverlayBinding
 import com.ven.assistsxkit.model.Plugin
+import com.ven.assistsxkit.model.isRemote
 import com.ven.assistsxkit.model.url
 import com.ven.assistsxkit.server.PluginWebServerManager
 
@@ -92,11 +93,11 @@ object OverlayIndex : AssistsServiceListener {
         if (!AssistsWindowManager.contains(assistWindowWrapper?.getView())) {
             AssistsWindowManager.add(assistWindowWrapper)
         }
-        if (plugin.path.startsWith("http")) {
+        if (plugin.isRemote()) {
             viewBinding?.web?.loadUrl(plugin.url())
         } else {
             CoroutineWrapper.launch {
-                val port = PluginWebServerManager.startServer(plugin)
+                val port = PluginWebServerManager.startServer(plugin, port = plugin.port)
                 if (port > 0) {
                     runMain { viewBinding?.web?.loadUrl(plugin.url(port = port)) }
                 } else {

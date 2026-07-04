@@ -13,6 +13,7 @@ import com.ven.assists.utils.CoroutineWrapper
 import com.ven.assists.utils.runMain
 import com.ven.assistsxkit.databinding.FragmentIndexBinding
 import com.ven.assistsxkit.model.Plugin
+import com.ven.assistsxkit.model.isRemote
 import com.ven.assistsxkit.model.url
 import com.ven.assistsxkit.server.PluginWebServerManager
 
@@ -61,11 +62,11 @@ class IndexFragment : Fragment(), AssistsServiceListener {
         binding.webView.onReceivedTitle = onReceivedTitle
         plugin?.let {
             PluginWebServerManager.plugin = it
-            if (it.path.startsWith("http")) {
+            if (it.isRemote()) {
                 binding.webView.loadUrl(plugin?.url() ?: "")
             } else {
                 CoroutineWrapper.launch {
-                    val port = PluginWebServerManager.startServer(it)
+                    val port = PluginWebServerManager.startServer(it, port = it.port)
                     if (port > 0) {
                         runMain { binding.webView.loadUrl(it.url(port = port)) }
                     } else {
