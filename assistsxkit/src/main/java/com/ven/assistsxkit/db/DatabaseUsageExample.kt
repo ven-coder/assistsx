@@ -29,11 +29,8 @@ class DatabaseUsageExample(private val context: Context) {
                 description = "A test plugin",
                 needScreenCapture = false,
                 path = "/data/data/com.example.plugin",
-                index = "index.html",
-                indexInOverlay = true,
-                icon = "icon.png",
                 packageName = "com.example.plugin",
-                port = 12987
+                port = 3127
             )
             
             pluginRepository.insertPlugin(plugin)

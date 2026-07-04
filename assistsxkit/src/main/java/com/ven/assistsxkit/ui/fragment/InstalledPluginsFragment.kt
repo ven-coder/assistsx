@@ -34,6 +34,7 @@ import java.util.UUID
 import com.blankj.utilcode.util.SPUtils
 import com.blankj.utilcode.util.ToastUtils
 import com.google.android.material.textfield.TextInputEditText
+import com.ven.assistsxkit.db.withDbSyncedFields
 import com.ven.assistsxkit.model.Plugin
 import com.ven.assistsxkit.model.createDefaultRemotePlugin
 import com.ven.assistsxkit.model.withRemoteDefaults
@@ -705,44 +706,31 @@ open class InstalledPluginsFragment : Fragment() {
 
     private suspend fun savePlugin(plugin: Plugin) {
         try {
-            // 获取已安装插件列表
+            // 先写入 DB，获取含 port 等完整字段的对象
+            val syncedPlugin = App.pluginRepository.savePlugin(plugin)
+
             val pluginsJson = SPUtils.getInstance().getString(SPKeys.INSTALLED_PLUGINS, "[]")
             val pluginsArray = GsonUtils.fromJson<List<Plugin>>(pluginsJson, GsonUtils.getListType(Plugin::class.java))
             val newPluginsArray = arrayListOf<Plugin>()
 
-            // 检查是否存在相同packageName的插件
             var existingFound = false
             for (i in 0 until pluginsArray.size) {
                 val existingPackageName = pluginsArray[i].packageName
-
-                // 如果找到相同packageName的插件，跳过它（从列表中删除）
-                if (existingPackageName == plugin.packageName) {
+                if (existingPackageName == syncedPlugin.packageName) {
                     existingFound = true
                     continue
                 }
-
-                // 保留其他插件
                 newPluginsArray.add(pluginsArray[i])
             }
 
-            // 如果删除了已存在的插件信息，提示用户
             if (existingFound) {
                 withContext(Dispatchers.Main) {
                     Toast.makeText(context, "已更新插件信息", Toast.LENGTH_SHORT).show()
                 }
             }
 
-
-            // 添加新插件到数组
-            newPluginsArray.add(plugin)
-
-            // 保存更新后的列表
-            SPUtils.getInstance().put(SPKeys.INSTALLED_PLUGINS, GsonUtils.toJson(newPluginsArray))
-
-            runCatching {
-                App.pluginRepository.insertPlugin(plugin)
-            }
-
+            newPluginsArray.add(plugin.withDbSyncedFields(syncedPlugin))
+            App.pluginRepository.savePluginsToSharedPreferences(newPluginsArray)
         } catch (e: Exception) {
             throw Exception("保存插件信息失败：${e.message}")
         }

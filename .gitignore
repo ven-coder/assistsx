@@ -33,3 +33,4 @@ readme1.md
 /simple/_default/release/output-metadata.json
 /app/src/main/assets/dist.zip
 assists.gradle
+docs/

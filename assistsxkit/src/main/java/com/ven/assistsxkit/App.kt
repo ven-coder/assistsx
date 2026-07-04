@@ -1,10 +1,13 @@
 package com.ven.assistsxkit
 
 import android.app.Application
-import com.blankj.utilcode.util.AppUtils
 import com.blankj.utilcode.util.Utils
 import com.ven.assistsxkit.db.AppDatabase
 import com.ven.assistsxkit.repository.PluginRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 class App : Application() {
 
@@ -18,6 +21,8 @@ class App : Application() {
             private set
     }
 
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     override fun onCreate() {
         super.onCreate()
         Utils.init(this)
@@ -30,10 +35,11 @@ class App : Application() {
      * 初始化数据库和Repository
      */
     private fun initDatabase() {
-        // 初始化数据库
         database = AppDatabase.getDatabase(this)
-        
-        // 初始化PluginRepository
         pluginRepository = PluginRepository(this)
+        // 启动时将 SP 历史数据同步到 DB，补齐缺失字段
+        applicationScope.launch {
+            pluginRepository.syncFromSharedPreferences()
+        }
     }
 }

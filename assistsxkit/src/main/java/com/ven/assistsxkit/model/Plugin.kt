@@ -1,6 +1,5 @@
 package com.ven.assistsxkit.model
 
-import com.ven.assistsxkit.db.entity.PluginEntity
 import com.ven.assistsxkit.server.PluginWebServerManager
 import java.io.Serializable
 
@@ -40,9 +39,12 @@ data class Plugin(
 
 }
 
+/** 是否为远程插件（http/https 地址） */
+fun Plugin.isRemote(): Boolean = path.startsWith("http", ignoreCase = true)
+
 fun Plugin.url(port: Int = this.port): String {
 
-    if (path.startsWith("http")) {
+    if (isRemote()) {
         return "$path/$index"
     } else {
         return "http://127.0.0.1:$port/$index"
@@ -51,7 +53,7 @@ fun Plugin.url(port: Int = this.port): String {
 }
 
 fun Plugin.getDomain(): String {
-    return if (path.startsWith("http")) {
+    return if (isRemote()) {
         path
     } else {
         "http://127.0.0.1:$port"

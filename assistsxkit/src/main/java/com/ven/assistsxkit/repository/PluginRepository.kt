@@ -1,20 +1,59 @@
 package com.ven.assistsxkit.repository
 
 import android.content.Context
+import com.blankj.utilcode.util.GsonUtils
+import com.blankj.utilcode.util.SPUtils
+import com.ven.assistsxkit.common.SPKeys
 import com.ven.assistsxkit.db.AppDatabase
 import com.ven.assistsxkit.db.entity.PluginEntity
+import com.ven.assistsxkit.db.toEntity
+import com.ven.assistsxkit.db.toPlugin
 import com.ven.assistsxkit.model.Plugin
+import com.ven.assistsxkit.model.isRemote
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 /**
- * Plugin数据仓库
- * 负责管理Plugin数据的CRUD操作
+ * Plugin 数据仓库，负责 SP 与 DB 的插件数据同步及 CRUD。
  */
 class PluginRepository(context: Context) {
 
     private val database = AppDatabase.getDatabase(context)
     private val pluginDao = database.pluginDao()
+
+    /**
+     * 从 SP 读取已安装插件列表
+     */
+    fun getPluginsFromSharedPreferences(): List<Plugin> {
+        return runCatching {
+            val pluginsJson = SPUtils.getInstance().getString(SPKeys.INSTALLED_PLUGINS, "[]")
+            GsonUtils.fromJson<List<Plugin>>(pluginsJson, GsonUtils.getListType(Plugin::class.java))
+                ?: emptyList()
+        }.getOrDefault(emptyList())
+    }
+
+    /**
+     * 将插件列表写入 SP
+     */
+    fun savePluginsToSharedPreferences(plugins: List<Plugin>) {
+        SPUtils.getInstance().put(SPKeys.INSTALLED_PLUGINS, GsonUtils.toJson(plugins))
+    }
+
+    /**
+     * 启动时将 SP 数据全量同步到 DB，保证历史数据字段完整
+     */
+    suspend fun syncFromSharedPreferences() {
+        getPluginsFromSharedPreferences().forEach { plugin ->
+            insertPlugin(plugin)
+        }
+    }
+
+    /**
+     * 保存单个插件：写入 DB 并返回含 localPort 等完整对象，供回写 SP
+     */
+    suspend fun savePlugin(plugin: Plugin): Plugin {
+        return insertPlugin(plugin)
+    }
 
     /**
      * 获取所有插件
@@ -26,7 +65,7 @@ class PluginRepository(context: Context) {
     }
 
     /**
-     * 根据ID获取插件
+     * 根据 ID 获取插件
      */
     suspend fun getPluginById(id: Long): Plugin? {
         return pluginDao.getPluginById(id)?.toPlugin()
@@ -40,64 +79,61 @@ class PluginRepository(context: Context) {
     }
 
     /**
-     * 插入插件
-     * 如果存在相同的packageName则更新，否则插入
-     * 插入时会自动生成不重复的port值，并自动设置更新时间
+     * 插入或更新插件，按路径类型写入 localPath / remoteAddress；返回含最终 localPort 的 Plugin
      */
-    suspend fun insertPlugin(plugin: Plugin) {
+    suspend fun insertPlugin(plugin: Plugin): Plugin {
         val existingPlugin = pluginDao.getPluginByPackageName(plugin.packageName)
+        val localPort = resolveLocalPort(plugin, existingPlugin)
+        val entity = plugin.toEntity(
+            dbId = existingPlugin?.id ?: 0,
+            localPort = localPort
+        ).copy(updateTime = System.currentTimeMillis())
+
         if (existingPlugin != null) {
-            // 存在相同packageName的插件，更新数据
-            val updatedEntity = plugin.toEntity().copy(
-                id = existingPlugin.id, 
-                port = existingPlugin.port,
-                updateTime = System.currentTimeMillis()
-            )
-            pluginDao.updatePlugin(updatedEntity)
+            pluginDao.updatePlugin(entity)
         } else {
-            // 不存在相同packageName的插件，插入新数据
-            val entity = plugin.toEntity()
-            val entityWithPort = entity.copy(
-                port = generateUniquePort(),
-                updateTime = System.currentTimeMillis()
-            )
-            pluginDao.insertPlugin(entityWithPort)
+            pluginDao.insertPlugin(entity)
         }
+        return entity.toPlugin()
     }
 
     /**
      * 插入多个插件
-     * 如果存在相同的packageName则更新，否则插入
      */
     suspend fun insertPlugins(plugins: List<Plugin>) {
         plugins.forEach { plugin ->
-            insertPlugin(plugin) // 复用单个插入的逻辑
+            insertPlugin(plugin)
         }
     }
 
     /**
      * 更新插件
-     * 更新时会自动设置更新时间
      */
-    suspend fun updatePlugin(plugin: Plugin) {
-        val entity = plugin.toEntity().copy(updateTime = System.currentTimeMillis())
+    suspend fun updatePlugin(plugin: Plugin): Plugin {
+        val existing = pluginDao.getPluginByPackageName(plugin.packageName)
+        val localPort = resolveLocalPort(plugin, existing)
+        val entity = plugin.toEntity(
+            dbId = existing?.id ?: 0,
+            localPort = localPort
+        ).copy(updateTime = System.currentTimeMillis())
         pluginDao.updatePlugin(entity)
+        return entity.toPlugin()
     }
 
     /**
      * 删除插件
      */
     suspend fun deletePlugin(plugin: Plugin) {
-        pluginDao.deletePlugin(plugin.toEntity())
+        pluginDao.deletePluginByPackageName(plugin.packageName)
     }
 
     /**
-     * 根据ID删除插件
+     * 根据 ID 删除插件
      */
     suspend fun deletePluginById(id: Long) {
         pluginDao.deletePluginById(id)
     }
-    
+
     /**
      * 根据包名删除插件
      */
@@ -111,58 +147,35 @@ class PluginRepository(context: Context) {
     suspend fun deleteAllPlugins() {
         pluginDao.deleteAllPlugins()
     }
-    
+
     /**
-     * 生成唯一的port值
-     * 从3127开始，找到第一个未被使用的port值
+     * 确定 localPort：远程插件不分配；本地插件保证全局唯一
      */
-    private suspend fun generateUniquePort(): Int {
-        val usedPorts = pluginDao.getAllUsedPorts().toSet()
-        var port = 3127 // 起始端口号
-        
-        // 从起始端口开始查找第一个未被使用的端口
+    private suspend fun resolveLocalPort(plugin: Plugin, existing: PluginEntity?): Int {
+        if (plugin.isRemote()) {
+            return -1
+        }
+        val usedPorts = pluginDao.getAllUsedLocalPorts()
+            .filter { existing == null || it != existing.localPort }
+            .toSet()
+
+        if (plugin.port > 0 && plugin.port !in usedPorts) {
+            return plugin.port
+        }
+        if (existing != null && existing.localPort > 0 && existing.localPort !in usedPorts) {
+            return existing.localPort
+        }
+        return generateUniqueLocalPort(usedPorts)
+    }
+
+    /**
+     * 生成唯一的 localPort，从 3127 起递增
+     */
+    private fun generateUniqueLocalPort(usedPorts: Set<Int>): Int {
+        var port = 3127
         while (usedPorts.contains(port)) {
             port++
         }
-        
         return port
     }
-}
-
-/**
- * 将PluginEntity转换为Plugin
- */
-private fun PluginEntity.toPlugin(): Plugin {
-    return Plugin(
-        name = name,
-        versionName = versionName,
-        versionCode = versionCode,
-        description = description,
-        needScreenCapture = needScreenCapture,
-        path = path,
-        index = index,
-        indexInOverlay = indexInOverlay,
-        icon = icon,
-        packageName = packageName,
-        port = port
-    )
-}
-
-/**
- * 将Plugin转换为PluginEntity
- */
-private fun Plugin.toEntity(): PluginEntity {
-    return PluginEntity(
-        name = name,
-        versionName = versionName,
-        versionCode = versionCode,
-        description = description,
-        needScreenCapture = needScreenCapture,
-        path = path,
-        index = index,
-        indexInOverlay = indexInOverlay,
-        icon = icon,
-        packageName = packageName,
-        port = port
-    )
 }

@@ -71,8 +71,8 @@ interface PluginDao {
     suspend fun deleteAllPlugins()
     
     /**
-     * 获取所有已使用的port值
+     * 获取所有已使用的 localPort 值
      */
-    @Query("SELECT port FROM plugins WHERE port > 0")
-    suspend fun getAllUsedPorts(): List<Int>
+    @Query("SELECT localPort FROM plugins WHERE localPort > 0")
+    suspend fun getAllUsedLocalPorts(): List<Int>
 }
