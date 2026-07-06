@@ -90,6 +90,7 @@ object OverlayIndex : AssistsServiceListener {
             AssistsService.listeners.add(this)
         }
         this.plugin = plugin
+        PluginWebServerManager.setRunningPlugin(plugin)
         if (!AssistsWindowManager.contains(assistWindowWrapper?.getView())) {
             AssistsWindowManager.add(assistWindowWrapper)
         }

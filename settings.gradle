@@ -17,3 +17,17 @@ pluginManagement {
 
 include ':app'
 include ':assistsxkit'
+
+def assistsComposite = new File(settingsDir, '../assists')
+if (assistsComposite.isDirectory()) {
+    includeBuild(assistsComposite) {
+        dependencySubstitution {
+            substitute module('com.github.ven-coder:assists-base') using project(':assists')
+            substitute module('com.github.ven-coder:assists-mp') using project(':assists-mp')
+            substitute module('com.github.ven-coder:assists-web') using project(':assists-web')
+            substitute module('com.github.ven-coder:assists-ime') using project(':assists-ime')
+            substitute module('com.github.ven-coder:assists-ime') using project(':assists-ime')
+            substitute module('com.github.ven-coder:assists-log') using project(':assists-log')
+        }
+    }
+}

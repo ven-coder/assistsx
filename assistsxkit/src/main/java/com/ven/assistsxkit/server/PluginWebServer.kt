@@ -22,6 +22,16 @@ object PluginWebServerManager {
 
     var plugin: Plugin? = null
 
+    /** 获取当前正在运行的插件（本地 HTTP 服务已启动或远程插件已加载时有效） */
+    @JvmStatic
+    fun getRunningPlugin(): Plugin? = plugin
+
+    /** 设置当前运行的插件（远程插件等未走 startServer 的场景） */
+    @JvmStatic
+    fun setRunningPlugin(plugin: Plugin?) {
+        this.plugin = plugin
+    }
+
     /**
      * 启动本地服务器，默认使用插件在数据库中分配的 localPort（映射为 plugin.port）。
      * @return 实际启动的端口号
@@ -53,6 +63,7 @@ object PluginWebServerManager {
         } catch (ignored: Exception) {
         } finally {
             server = null
+            plugin = null
         }
     }
 }
