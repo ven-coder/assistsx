@@ -8,6 +8,9 @@ import java.io.File
  */
 object PluginLogPaths {
 
+    /** 插件环境未传 fileName 时使用的默认日志文件名（不含 .txt 后缀） */
+    const val DEFAULT_LOG_FILE_NAME = "default"
+
     /**
      * 将逻辑日志目录转换为插件隔离后的物理目录。
      * 例：logical=/abs/abc/cba, package=com.aaa.bbb → /abs/abc/cba/log-com.aaa.bbb
