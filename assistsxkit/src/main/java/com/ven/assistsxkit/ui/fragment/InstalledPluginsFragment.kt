@@ -54,6 +54,8 @@ import com.ven.assistsxkit.ui.IndexActivity
 import com.ven.assistsxkit.ui.PluginPlatformFragment
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
+import kotlin.coroutines.resume
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 open class InstalledPluginsFragment : Fragment() {
 
@@ -86,6 +88,12 @@ open class InstalledPluginsFragment : Fragment() {
                         lifecycleScope.launch(Dispatchers.IO) {
                             try {
                                 val plugin = GsonUtils.fromJson(pluginJson, Plugin::class.java)
+                                if (!confirmOverwriteIfNeeded(plugin)) {
+                                    withContext(Dispatchers.Main) {
+                                        Toast.makeText(context, getString(R.string.plugin_install_cancelled), Toast.LENGTH_SHORT).show()
+                                    }
+                                    return@launch
+                                }
                                 // 保存插件信息
                                 savePlugin(plugin)
                                 // 在主线程更新UI
@@ -329,6 +337,24 @@ open class InstalledPluginsFragment : Fragment() {
             } else {
                 packageName = sanitizeFileNameToPackageName(fileName)
                 useDefaultPlugin = true
+            }
+
+            val incomingPlugin = buildIncomingPluginPreview(tempUnzipDir, fileName, packageName, useDefaultPlugin)
+
+            withContext(Dispatchers.Main) {
+                progressDialog.dismiss()
+            }
+            if (!confirmOverwriteIfNeeded(incomingPlugin)) {
+                tempFile.delete()
+                tempUnzipDir.deleteRecursively()
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, getString(R.string.plugin_install_cancelled), Toast.LENGTH_SHORT).show()
+                }
+                return
+            }
+            withContext(Dispatchers.Main) {
+                progressDialog.show()
+                updateProgressDialog(progressDialog, "正在安装插件...")
             }
 
             // 4. 创建插件专属目录
@@ -578,6 +604,15 @@ open class InstalledPluginsFragment : Fragment() {
 
             if (plugin != null) {
                 try {
+                    withContext(Dispatchers.Main) {
+                        progressDialog.dismiss()
+                    }
+                    if (!confirmOverwriteIfNeeded(plugin)) {
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(context, getString(R.string.plugin_install_cancelled), Toast.LENGTH_SHORT).show()
+                        }
+                        return@launch
+                    }
                     savePlugin(plugin)
                     withContext(Dispatchers.Main) {
                         progressDialog.dismiss()
@@ -598,6 +633,15 @@ open class InstalledPluginsFragment : Fragment() {
                         id = UUID.randomUUID().toString()
                     )
 
+                    withContext(Dispatchers.Main) {
+                        progressDialog.dismiss()
+                    }
+                    if (!confirmOverwriteIfNeeded(defaultPlugin)) {
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(context, getString(R.string.plugin_install_cancelled), Toast.LENGTH_SHORT).show()
+                        }
+                        return@launch
+                    }
                     savePlugin(defaultPlugin)
 
                     withContext(Dispatchers.Main) {
@@ -704,11 +748,104 @@ open class InstalledPluginsFragment : Fragment() {
     }
 
     private suspend fun savePlugin(plugin: Plugin) {
-        val existing = App.pluginRepository.getPluginByPackageName(plugin.packageName)
         App.pluginRepository.savePlugin(plugin)
-        if (existing != null) {
-            withContext(Dispatchers.Main) {
-                Toast.makeText(context, "已更新插件信息", Toast.LENGTH_SHORT).show()
+    }
+
+    /** 构建即将安装插件的预览信息，用于覆盖安装确认 */
+    private fun buildIncomingPluginPreview(
+        sourceDir: File,
+        fileName: String,
+        packageName: String,
+        useDefaultPlugin: Boolean
+    ): Plugin {
+        val displayName = fileName.removeSuffix(".zip").removeSuffix(".ZIP")
+        return if (useDefaultPlugin) {
+            Plugin(
+                name = displayName,
+                version = "1.0.0",
+                versionName = "1.0.0",
+                description = displayName,
+                packageName = packageName
+            )
+        } else {
+            val configFile = findConfigFile(sourceDir)
+                ?: throw Exception("未找到有效的插件配置文件")
+            val jsonString = FileReader(configFile).use { it.readText() }
+            val parsed = GsonUtils.fromJson(jsonString, Plugin::class.java)
+            parsed.copy(
+                name = parsed.name.takeIf { it.isNotBlank() } ?: displayName,
+                description = parsed.description.takeIf { it.isNotBlank() } ?: displayName,
+                packageName = parsed.packageName.takeIf { it.isNotBlank() } ?: packageName,
+                version = parsed.version.takeIf { it.isNotBlank() } ?: "1.0.0",
+                versionName = parsed.versionName.takeIf { it.isNotBlank() } ?: "1.0.0",
+            )
+        }
+    }
+
+    private fun formatPluginSummary(plugin: Plugin): String {
+        val version = plugin.versionName.ifEmpty { plugin.version }.ifEmpty { "-" }
+        val description = plugin.description.ifBlank { "-" }
+        val packageName = plugin.packageName.ifBlank { "-" }
+        val source = when {
+            plugin.path.startsWith("http://") || plugin.path.startsWith("https://") -> "\n来源：${plugin.path}"
+            plugin.path.isNotBlank() -> "\n路径：${plugin.path}"
+            else -> ""
+        }
+        return """
+            名称：${plugin.name.ifBlank { "-" }}
+            版本：$version
+            描述：$description
+            包名：$packageName$source
+        """.trimIndent()
+    }
+
+    private fun formatOverwriteConfirmMessage(existingPlugin: Plugin, incomingPlugin: Plugin): String {
+        return """
+            ${getString(R.string.plugin_overwrite_confirm_message)}
+
+            【${getString(R.string.plugin_overwrite_installed_section)}】
+            ${formatPluginSummary(existingPlugin)}
+
+            【${getString(R.string.plugin_overwrite_incoming_section)}】
+            ${formatPluginSummary(incomingPlugin)}
+        """.trimIndent()
+    }
+
+    /** 若存在同包名插件则弹出覆盖确认，返回 true 表示继续安装 */
+    private suspend fun confirmOverwriteIfNeeded(incomingPlugin: Plugin): Boolean {
+        if (incomingPlugin.packageName.isBlank()) {
+            return true
+        }
+        val existingPlugin = App.pluginRepository.getPluginByPackageName(incomingPlugin.packageName)
+            ?: return true
+
+        return withContext(Dispatchers.Main) {
+            suspendCancellableCoroutine { continuation ->
+                if (!isAdded) {
+                    if (continuation.isActive) {
+                        continuation.resume(false)
+                    }
+                    return@suspendCancellableCoroutine
+                }
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(R.string.plugin_overwrite_confirm_title)
+                    .setMessage(formatOverwriteConfirmMessage(existingPlugin, incomingPlugin))
+                    .setPositiveButton(R.string.action_confirm) { _, _ ->
+                        if (continuation.isActive) {
+                            continuation.resume(true)
+                        }
+                    }
+                    .setNegativeButton(R.string.action_cancel) { _, _ ->
+                        if (continuation.isActive) {
+                            continuation.resume(false)
+                        }
+                    }
+                    .setOnCancelListener {
+                        if (continuation.isActive) {
+                            continuation.resume(false)
+                        }
+                    }
+                    .show()
             }
         }
     }
