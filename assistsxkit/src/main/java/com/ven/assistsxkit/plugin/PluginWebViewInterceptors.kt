@@ -10,6 +10,7 @@ import com.ven.assists.web.CallRequest
 import com.ven.assists.web.CallResponse
 import com.ven.assists.web.createResponse
 import com.ven.assists.web.floating.FloatCallMethod
+import com.ven.assists.web.log.AssistsLogCallMethod
 import com.ven.assistsxkit.model.getDomain
 import com.ven.assistsxkit.server.PluginWebServerManager
 
@@ -62,6 +63,32 @@ object PluginWebViewInterceptors {
         }
 
         CallInterceptResult(false, json)
+    }
+
+    fun createLogCallIntercept(): (String) -> CallInterceptResult = intercept@{ json ->
+        val request = parseRequest(json) ?: return@intercept CallInterceptResult(false, json)
+        if (request.method !in AssistsLogCallMethod.pathAwareMethods) {
+            return@intercept CallInterceptResult(false, json)
+        }
+
+        val packageName = PluginWebServerManager.getRunningPlugin()?.packageName
+        if (packageName.isNullOrBlank()) {
+            LogUtils.w("PluginWebViewInterceptors", "log intercept skipped: no running plugin packageName")
+            return@intercept CallInterceptResult(false, json)
+        }
+
+        val originalDirPath = request.arguments?.get("dirPath")?.takeIf { !it.isJsonNull }?.asString
+        val scopedDir = PluginLogPaths.scopedLogDir(originalDirPath, packageName)
+        val args = request.arguments ?: JsonObject()
+        args.addProperty("dirPath", scopedDir)
+        val updated = CallRequest(
+            method = request.method,
+            arguments = args,
+            nodes = request.nodes,
+            node = request.node,
+            callbackId = request.callbackId,
+        )
+        CallInterceptResult(false, GsonUtils.toJson(updated))
     }
 
     private fun parseRequest(json: String): CallRequest<JsonObject>? {

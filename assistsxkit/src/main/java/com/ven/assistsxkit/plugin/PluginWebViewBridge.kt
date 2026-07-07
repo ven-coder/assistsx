@@ -21,6 +21,7 @@ object PluginWebViewBridge {
         }
         ASWebView.globalJavascriptCallIntercepts.add(PluginWebViewInterceptors.createMainCallIntercept())
         ASWebView.globalDbCallIntercepts.add(PluginWebViewInterceptors.createDbCallIntercept())
+        ASWebView.globalLogCallIntercepts.add(PluginWebViewInterceptors.createLogCallIntercept())
         ASWebView.globalUrlTransform = { url ->
             PluginWebServerManager.getRunningPlugin()?.getDomain()?.let { domain ->
                 if (!url.startsWith("http")) {
