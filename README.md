@@ -23,5 +23,19 @@ dependencies {
 
 本地联调：若同级目录存在 `../assists` 工程，`settings.gradle` 会通过 composite build 自动替换为源码模块；也可使用仓库内 `assists.gradle` 覆盖远程坐标。
 
+### 发布 assistsxkit 到 Maven Central
+
+版本号在根目录 `build.gradle` 的 `assistsxkitVersion`（当前 **0.0.2**）中维护。
+
+```bash
+./gradlew publishAllToMavenCentral
+```
+
+发布后坐标：
+
+```gradle
+implementation "io.github.ven-coder:assistsxkit:0.0.2"
+```
+
 ##### 作者Wechat
 <img width="250" alt="9ee0d2c0a6a2a46825c6e75f209be1c9" src="https://github.com/user-attachments/assets/cb0eb725-8120-49db-b805-1a579f98c5b4" />

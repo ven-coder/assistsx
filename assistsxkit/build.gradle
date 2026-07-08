@@ -2,8 +2,8 @@ plugins {
     id 'com.android.library'
     id 'org.jetbrains.kotlin.android'
     id 'com.google.devtools.ksp'
-    id 'kotlin-kapt'
-    id 'maven-publish'
+    id 'org.jetbrains.kotlin.kapt'
+    id 'com.vanniktech.maven.publish'
 }
 
 android {
@@ -72,15 +72,10 @@ dependencies {
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
     implementation 'org.nanohttpd:nanohttpd:2.3.1'
 }
-afterEvaluate {
-    publishing {
-        publications {
-            release(MavenPublication) {
-                from components.release
-                groupId = 'com.ven.assistsxkit'
-                artifactId = 'assistsxkit'
-                version = '0.0.2'
-            }
-        }
-    }
+
+ext {
+    mavenArtifactId = 'assistsxkit'
+    mavenPomName = 'AssistsX Kit'
+    mavenPomDescription = 'AssistsX plugin runtime kit for Android automation platform'
 }
+apply from: rootProject.file('gradle/publish-maven-central.gradle')

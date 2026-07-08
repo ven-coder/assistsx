@@ -10,6 +10,8 @@ buildscript {
 
         // assists 系列（Maven Central: io.github.ven-coder）
         assistsVersion = "3.5.3"
+        mavenGroupId = "io.github.ven-coder"
+        assistsxkitVersion = "0.0.2"
 
         // SDK 版本（与 assists 3.5.0 对齐）
         compileSdk = 36
@@ -60,7 +62,6 @@ buildscript {
         classpath 'com.android.tools.build:gradle:8.9.2'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.0"
 
-        classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
     }
 }
 plugins {
@@ -80,4 +81,10 @@ allprojects {
 
 task clean(type: Delete) {
     delete rootProject.buildDir
+}
+
+tasks.register('publishAllToMavenCentral') {
+    group = 'publishing'
+    description = 'Publish assistsxkit to Maven Central'
+    dependsOn(':assistsxkit:publishToMavenCentral')
 }
