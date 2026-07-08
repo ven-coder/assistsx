@@ -15,7 +15,6 @@ import com.ven.assistsxkit.databinding.FragmentIndexBinding
 import com.ven.assistsxkit.model.Plugin
 import com.ven.assistsxkit.model.isRemote
 import com.ven.assistsxkit.model.url
-import com.ven.assistsxkit.plugin.PluginWebViewBridge
 import com.ven.assistsxkit.server.PluginWebServerManager
 
 class IndexFragment : Fragment(), AssistsServiceListener {
@@ -60,7 +59,6 @@ class IndexFragment : Fragment(), AssistsServiceListener {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        PluginWebViewBridge.ensureInstalled()
         binding.webView.onReceivedTitle = onReceivedTitle
         plugin?.let {
             PluginWebServerManager.setRunningPlugin(it)

@@ -4,13 +4,14 @@ import android.app.Application
 import com.blankj.utilcode.util.Utils
 import com.ven.assistsxkit.common.LegacyPluginMigration
 import com.ven.assistsxkit.db.AppDatabase
+import com.ven.assistsxkit.plugin.PluginWebViewBridge
 import com.ven.assistsxkit.repository.PluginRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
-class App : Application() {
+open class App : Application() {
 
     companion object {
         lateinit var database: AppDatabase
@@ -25,6 +26,7 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         Utils.init(this)
+        PluginWebViewBridge.ensureInstalled()
         initDatabase()
     }
 
