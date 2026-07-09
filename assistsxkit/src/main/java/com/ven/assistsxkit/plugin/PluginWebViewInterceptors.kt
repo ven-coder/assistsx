@@ -13,6 +13,8 @@ import com.ven.assists.web.floating.FloatCallMethod
 import com.ven.assists.web.db.DbCallMethod
 import com.ven.assists.web.db.DbDatabaseManager
 import com.ven.assists.web.log.AssistsLogCallMethod
+import com.ven.assists.web.mmkv.MmkvCallMethod
+import com.ven.assists.web.mmkv.MmkvManager
 import com.ven.assistsxkit.model.getDomain
 import com.ven.assistsxkit.server.PluginWebServerManager
 
@@ -108,6 +110,50 @@ object PluginWebViewInterceptors {
         val args = request.arguments ?: JsonObject()
         args.addProperty("dirPath", scopedDir)
         args.addProperty("fileName", effectiveFileName)
+        val updated = CallRequest(
+            method = request.method,
+            arguments = args,
+            nodes = request.nodes,
+            node = request.node,
+            callbackId = request.callbackId,
+        )
+        CallInterceptResult(false, GsonUtils.toJson(updated))
+    }
+
+    fun createMmkvCallIntercept(): (String) -> CallInterceptResult = intercept@{ json ->
+        val request = parseRequest(json) ?: return@intercept CallInterceptResult(false, json)
+        if (request.method !in MmkvCallMethod.pathAwareMethods) {
+            return@intercept CallInterceptResult(false, json)
+        }
+
+        val packageName = PluginWebServerManager.getRunningPlugin()?.packageName
+        if (packageName.isNullOrBlank()) {
+            LogUtils.w("PluginWebViewInterceptors", "mmkv intercept skipped: no running plugin packageName")
+            return@intercept CallInterceptResult(false, json)
+        }
+
+        val rootPathArg = request.arguments?.get("rootPath")?.takeIf { !it.isJsonNull }?.asString
+        val mmkvId = request.arguments?.get("mmkvId")?.takeIf { !it.isJsonNull }?.asString
+
+        if (!rootPathArg.isNullOrBlank() && PluginMmkvPaths.isScopedRootPath(rootPathArg, packageName)) {
+            return@intercept CallInterceptResult(false, json)
+        }
+
+        if (!rootPathArg.isNullOrBlank()) {
+            val response = request.createResponse(
+                code = -1,
+                message = "插件环境不支持自定义 rootPath，请使用 mmkvId",
+                data = null,
+            )
+            return@intercept CallInterceptResult(true, GsonUtils.toJson(response))
+        }
+
+        val effectiveMmkvId = mmkvId?.trim()?.takeIf { it.isNotEmpty() }
+            ?: MmkvManager.DEFAULT_MMKV_ID
+        val scopedRoot = PluginMmkvPaths.scopedRootPath(packageName)
+        val args = request.arguments ?: JsonObject()
+        args.addProperty("rootPath", scopedRoot)
+        args.addProperty("mmkvId", effectiveMmkvId)
         val updated = CallRequest(
             method = request.method,
             arguments = args,

@@ -15,6 +15,7 @@ object PluginWebViewBridge {
     private var mainIntercept: ((String) -> CallInterceptResult)? = null
     private var dbIntercept: ((String) -> CallInterceptResult)? = null
     private var logIntercept: ((String) -> CallInterceptResult)? = null
+    private var mmkvIntercept: ((String) -> CallInterceptResult)? = null
 
     @Volatile
     private var installed = false
@@ -39,6 +40,9 @@ object PluginWebViewBridge {
             logIntercept = PluginWebViewInterceptors.createLogCallIntercept().also {
                 ASWebView.globalLogCallIntercepts.add(it)
             }
+            mmkvIntercept = PluginWebViewInterceptors.createMmkvCallIntercept().also {
+                ASWebView.globalMmkvCallIntercepts.add(it)
+            }
             ASWebView.globalUrlTransform = { url ->
                 PluginWebServerManager.getRunningPlugin()?.getDomain()?.let { domain ->
                     if (!url.startsWith("http")) {
@@ -56,9 +60,11 @@ object PluginWebViewBridge {
         mainIntercept?.let { ASWebView.globalJavascriptCallIntercepts.remove(it) }
         dbIntercept?.let { ASWebView.globalDbCallIntercepts.remove(it) }
         logIntercept?.let { ASWebView.globalLogCallIntercepts.remove(it) }
+        mmkvIntercept?.let { ASWebView.globalMmkvCallIntercepts.remove(it) }
         mainIntercept = null
         dbIntercept = null
         logIntercept = null
+        mmkvIntercept = null
         ASWebView.globalUrlTransform = null
         FloatWindowBridge.webViewProvider = null
     }
