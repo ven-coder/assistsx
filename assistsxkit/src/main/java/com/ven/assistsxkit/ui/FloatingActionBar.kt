@@ -21,11 +21,9 @@ class FloatingActionBar(context: Context) : FrameLayout(context) {
 
     private val density = context.resources.displayMetrics.density
     private fun dp(v: Int): Int = (v * density).toInt()
-    private fun dpf(v: Int): Float = v * density
 
     private val fabSize = dp(48)
     private val barHeight = dp(48)
-    private val edgeMargin = dp(16)
     private val touchSlop = dp(8)
     private val autoCollapseDelay = 5000L
     private val snapDuration = 200L
@@ -39,9 +37,7 @@ class FloatingActionBar(context: Context) : FrameLayout(context) {
     private var downTransX = 0f
     private var downTransY = 0f
     private var screenWidth = 0
-    private var screenHeight = 0
-    private var statusBarHeight = 0
-    private var navBarHeight = 0
+    private var decorViewRef: FrameLayout? = null
 
     private val fabContainer: FrameLayout
     private val fabIcon: ImageView
@@ -57,9 +53,8 @@ class FloatingActionBar(context: Context) : FrameLayout(context) {
 
     init {
         fabIcon = ImageView(context).apply {
-            setImageResource(R.drawable.round_add_24)
+            setImageResource(R.drawable.ic_menu_24)
             setColorFilter(Color.WHITE)
-            rotation = 45f
             scaleType = ImageView.ScaleType.CENTER
         }
 
@@ -69,7 +64,6 @@ class FloatingActionBar(context: Context) : FrameLayout(context) {
                 shape = GradientDrawable.OVAL
                 setColor("#23252A".toColorInt())
             }
-            elevation = dpf(8)
             addView(fabIcon, LayoutParams(fabSize, fabSize))
         }
 
@@ -81,7 +75,6 @@ class FloatingActionBar(context: Context) : FrameLayout(context) {
                 cornerRadius = dp(24).toFloat()
                 setColor("#23252A".toColorInt())
             }
-            elevation = dpf(8)
             gravity = Gravity.CENTER_VERTICAL
             val paddingH = dp(4)
             setPadding(paddingH, 0, paddingH, 0)
@@ -97,22 +90,16 @@ class FloatingActionBar(context: Context) : FrameLayout(context) {
     fun attachToActivity(activity: Activity) {
         val decorView = activity.window.decorView as FrameLayout
         decorView.addView(this, LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        decorViewRef = decorView
 
         val metrics = activity.resources.displayMetrics
         screenWidth = metrics.widthPixels
-        screenHeight = metrics.heightPixels
-
-        val rect = Rect()
-        decorView.getWindowVisibleDisplayFrame(rect)
-        statusBarHeight = rect.top
-
-        val resourceId = activity.resources.getIdentifier("navigation_bar_height", "dimen", "android")
-        navBarHeight = if (resourceId > 0) activity.resources.getDimensionPixelSize(resourceId) else 0
 
         isOnLeftEdge = false
         post {
-            translationX = (screenWidth - fabSize - edgeMargin).toFloat()
-            translationY = (screenHeight / 3).toFloat()
+            val rect = visibleRect()
+            translationX = (screenWidth - fabSize).toFloat()
+            translationY = (rect.top + rect.height() / 3).toFloat()
         }
     }
 
@@ -143,12 +130,16 @@ class FloatingActionBar(context: Context) : FrameLayout(context) {
         val collapseIcon = if (isOnLeftEdge) R.drawable.que else R.drawable.ic_arrow_forward
         val buttons = listOf(
             Triple("collapse", collapseIcon, { collapse() }),
-            Triple("back", R.drawable.que, { onBackClick?.invoke(); restartAutoCollapse() }),
-            Triple("forward", R.drawable.ic_arrow_forward, { onForwardClick?.invoke(); restartAutoCollapse() }),
-            Triple("refresh", R.drawable.ic_refresh, { onRefreshClick?.invoke(); restartAutoCollapse() }),
-            Triple("close", R.drawable.ic_close_24, { onCloseClick?.invoke(); restartAutoCollapse() }),
+            Triple("back", R.drawable.ic_arrow_back_bar_24, { onBackClick?.invoke(); restartAutoCollapse() }),
+            Triple("forward", R.drawable.ic_arrow_forward_bar_24, { onForwardClick?.invoke(); restartAutoCollapse() }),
+            Triple("refresh", R.drawable.ic_refresh_circle_24, { onRefreshClick?.invoke(); restartAutoCollapse() }),
+            Triple("close", R.drawable.ic_exit_24, { onCloseClick?.invoke(); restartAutoCollapse() }),
         )
-        for ((tag, iconRes, action) in buttons) {
+        // The bar grows rightward from a left-edge anchor and leftward from a
+        // right-edge anchor, so the order must be mirrored on the right to keep
+        // the collapse button nearest the edge the FAB anchors to.
+        val ordered = if (isOnLeftEdge) buttons else buttons.reversed()
+        for ((tag, iconRes, action) in ordered) {
             val btn = ImageView(context).apply {
                 layoutParams = LinearLayout.LayoutParams(dp(44), barHeight)
                 setImageResource(iconRes)
@@ -183,10 +174,10 @@ class FloatingActionBar(context: Context) : FrameLayout(context) {
                     isDragging = true
                 }
                 if (isDragging) {
+                    val (minY, maxY) = yBounds()
                     translationX = (downTransX + event.rawX - downRawX)
-                        .coerceIn(-width / 2f, (screenWidth - width / 2).toFloat())
-                    translationY = (downTransY + event.rawY - downRawY)
-                        .coerceIn(statusBarHeight.toFloat(), (screenHeight - navBarHeight - height).toFloat())
+                        .coerceIn(0f, (screenWidth - width).toFloat())
+                    translationY = (downTransY + event.rawY - downRawY).coerceIn(minY, maxY)
                 }
                 return true
             }
@@ -199,7 +190,7 @@ class FloatingActionBar(context: Context) : FrameLayout(context) {
                     }
                 }
                 if (!isClick || isExpanded) {
-                    snapToEdge()
+                    snapToEdge(recomputeEdge = !isExpanded)
                 }
                 if (isExpanded) {
                     startAutoCollapse()
@@ -224,19 +215,24 @@ class FloatingActionBar(context: Context) : FrameLayout(context) {
         }
     }
 
-    private fun snapToEdge() {
-        val viewWidth = if (isExpanded) expandedBar.width else fabSize
-        val centerX = translationX + viewWidth / 2f
-        isOnLeftEdge = centerX < screenWidth / 2f
-
-        val targetX = if (isOnLeftEdge) {
-            edgeMargin.toFloat()
-        } else {
-            (screenWidth - viewWidth - edgeMargin).toFloat()
+    private fun snapToEdge(recomputeEdge: Boolean = false) {
+        // Only re-derive the edge from the FAB's own position while it is collapsed
+        // and draggable. When the bar is expanded (or collapsing), keep the edge
+        // recorded at expand time so the FAB returns to the side it expanded from
+        // instead of being nudged across by the bar's larger width.
+        if (recomputeEdge) {
+            val centerX = translationX + fabSize / 2f
+            isOnLeftEdge = centerX < screenWidth / 2f
         }
 
-        val minY = statusBarHeight.toFloat()
-        val maxY = (screenHeight - navBarHeight - height).toFloat().coerceAtLeast(minY)
+        val viewWidth = if (isExpanded) expandedBar.width else fabSize
+        val targetX = if (isOnLeftEdge) {
+            0f
+        } else {
+            (screenWidth - viewWidth).toFloat()
+        }
+
+        val (minY, maxY) = yBounds()
         val targetY = translationY.coerceIn(minY, maxY)
 
         animate()
@@ -244,6 +240,22 @@ class FloatingActionBar(context: Context) : FrameLayout(context) {
             .translationY(targetY)
             .setDuration(snapDuration)
             .start()
+    }
+
+    private fun visibleRect(): Rect {
+        val rect = Rect()
+        decorViewRef?.getWindowVisibleDisplayFrame(rect)
+        return rect
+    }
+
+    private fun yBounds(): Pair<Float, Float> {
+        // Bounds come from the decorView's visible frame (the FAB's coordinate
+        // space), not the physical screen size — the window may be inset by the
+        // status bar and nav bar, so screenHeight overshoots the real area.
+        val rect = visibleRect()
+        val minY = rect.top.toFloat()
+        val maxY = (rect.bottom - height).toFloat().coerceAtLeast(minY)
+        return minY to maxY
     }
 
     private fun startAutoCollapse() {
