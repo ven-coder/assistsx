@@ -2,10 +2,6 @@ package com.ven.assistsxkit.ui
 
 import android.content.Intent
 import android.os.Bundle
-import android.text.SpannableString
-import android.text.style.ForegroundColorSpan
-import android.view.Menu
-import android.view.MenuItem
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.graphics.toColorInt
@@ -13,7 +9,6 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.isInvisible
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.blankj.utilcode.util.ActivityUtils
-import com.blankj.utilcode.util.AppUtils
 import com.blankj.utilcode.util.BarUtils
 import com.blankj.utilcode.util.FragmentUtils
 import com.ven.assists.window.AssistsWindowManager
@@ -41,27 +36,39 @@ class IndexActivity : AppCompatActivity() {
         BarUtils.setStatusBarLightMode(this, false)
         setContentView(binding.root)
         setSupportActionBar(binding.toolbar)
-        // 关闭（X）按钮
-        binding.toolbar.setNavigationIcon(R.drawable.ic_close_24)
-        binding.toolbar.navigationIcon?.setTint(resources.getColor(R.color.colorPrimary, theme))
         binding.toolbar.setTitleTextColor(resources.getColor(R.color.colorPrimary, theme))
         binding.toolbar.setSubtitleTextColor(resources.getColor(R.color.colorPrimary, theme))
-        binding.toolbar.setNavigationOnClickListener {
-            MaterialAlertDialogBuilder(this)
-                .setMessage(R.string.plugin_close_confirm_message)
-                .setNegativeButton(R.string.action_cancel, null)
-                .setPositiveButton(R.string.action_confirm) { _, _ ->
-                    closePluginAndFinish()
-                }
-                .show()
-
-        }
         binding.toolbar.isInvisible
         FragmentUtils.add(supportFragmentManager, IndexFragment.get(intent.getSerializableExtra("plugin") as Plugin).apply {
             onReceivedTitle = {
                 this@IndexActivity.binding.toolbar.title = it
             }
         }, binding.container.id)
+
+        FloatingActionBar(this).apply {
+            onCloseClick = {
+                MaterialAlertDialogBuilder(this@IndexActivity)
+                    .setMessage(R.string.plugin_close_confirm_message)
+                    .setNegativeButton(R.string.action_cancel, null)
+                    .setPositiveButton(R.string.action_confirm) { _, _ ->
+                        closePluginAndFinish()
+                    }
+                    .show()
+            }
+            onBackClick = {
+                (FragmentUtils.findFragment(supportFragmentManager, IndexFragment::class.java) as? IndexFragment)
+                    ?.binding?.webView?.goBack()
+            }
+            onForwardClick = {
+                (FragmentUtils.findFragment(supportFragmentManager, IndexFragment::class.java) as? IndexFragment)
+                    ?.binding?.webView?.goForward()
+            }
+            onRefreshClick = {
+                (FragmentUtils.findFragment(supportFragmentManager, IndexFragment::class.java) as? IndexFragment)
+                    ?.binding?.webView?.reload()
+            }
+            attachToActivity(this@IndexActivity)
+        }
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {

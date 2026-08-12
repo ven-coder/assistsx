@@ -1,0 +1,268 @@
+package com.ven.assistsxkit.ui
+
+import android.app.Activity
+import android.content.Context
+import android.graphics.Color
+import android.graphics.Rect
+import android.graphics.drawable.GradientDrawable
+import android.os.Handler
+import android.os.Looper
+import android.view.Gravity
+import android.view.MotionEvent
+import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
+import androidx.core.graphics.toColorInt
+import com.ven.assistsxkit.R
+import kotlin.math.abs
+
+class FloatingActionBar(context: Context) : FrameLayout(context) {
+
+    private val density = context.resources.displayMetrics.density
+    private fun dp(v: Int): Int = (v * density).toInt()
+    private fun dpf(v: Int): Float = v * density
+
+    private val fabSize = dp(48)
+    private val barHeight = dp(48)
+    private val edgeMargin = dp(16)
+    private val touchSlop = dp(8)
+    private val autoCollapseDelay = 5000L
+    private val snapDuration = 200L
+
+    private var isExpanded = false
+    private var isOnLeftEdge = false
+    private var isClick = false
+    private var isDragging = false
+    private var downRawX = 0f
+    private var downRawY = 0f
+    private var downTransX = 0f
+    private var downTransY = 0f
+    private var screenWidth = 0
+    private var screenHeight = 0
+    private var statusBarHeight = 0
+    private var navBarHeight = 0
+
+    private val fabContainer: FrameLayout
+    private val fabIcon: ImageView
+    private val expandedBar: LinearLayout
+
+    private val handler = Handler(Looper.getMainLooper())
+    private val collapseRunnable = Runnable { collapse() }
+
+    var onCloseClick: (() -> Unit)? = null
+    var onBackClick: (() -> Unit)? = null
+    var onForwardClick: (() -> Unit)? = null
+    var onRefreshClick: (() -> Unit)? = null
+
+    init {
+        fabIcon = ImageView(context).apply {
+            setImageResource(R.drawable.round_add_24)
+            setColorFilter(Color.WHITE)
+            rotation = 45f
+            scaleType = ImageView.ScaleType.CENTER
+        }
+
+        fabContainer = FrameLayout(context).apply {
+            layoutParams = LayoutParams(fabSize, fabSize)
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor("#23252A".toColorInt())
+            }
+            elevation = dpf(8)
+            addView(fabIcon, LayoutParams(fabSize, fabSize))
+        }
+
+        expandedBar = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, barHeight)
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = dp(24).toFloat()
+                setColor("#23252A".toColorInt())
+            }
+            elevation = dpf(8)
+            gravity = Gravity.CENTER_VERTICAL
+            val paddingH = dp(4)
+            setPadding(paddingH, 0, paddingH, 0)
+        }
+
+        addView(fabContainer)
+        addView(expandedBar)
+        expandedBar.visibility = GONE
+
+        setOnTouchListener { _, event -> handleTouch(event) }
+    }
+
+    fun attachToActivity(activity: Activity) {
+        val decorView = activity.window.decorView as FrameLayout
+        decorView.addView(this, LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+
+        val metrics = activity.resources.displayMetrics
+        screenWidth = metrics.widthPixels
+        screenHeight = metrics.heightPixels
+
+        val rect = Rect()
+        decorView.getWindowVisibleDisplayFrame(rect)
+        statusBarHeight = rect.top
+
+        val resourceId = activity.resources.getIdentifier("navigation_bar_height", "dimen", "android")
+        navBarHeight = if (resourceId > 0) activity.resources.getDimensionPixelSize(resourceId) else 0
+
+        isOnLeftEdge = false
+        post {
+            translationX = (screenWidth - fabSize - edgeMargin).toFloat()
+            translationY = (screenHeight / 3).toFloat()
+        }
+    }
+
+    fun collapse() {
+        if (!isExpanded) return
+        isExpanded = false
+        animate().cancel()
+        expandedBar.visibility = GONE
+        fabContainer.visibility = VISIBLE
+        cancelAutoCollapse()
+        snapToEdge()
+    }
+
+    private fun expand() {
+        if (isExpanded) return
+        isExpanded = true
+        fabContainer.visibility = GONE
+        expandedBar.visibility = VISIBLE
+        rebuildBarButtons()
+        post {
+            snapToEdge()
+            startAutoCollapse()
+        }
+    }
+
+    private fun rebuildBarButtons() {
+        expandedBar.removeAllViews()
+        val collapseIcon = if (isOnLeftEdge) R.drawable.que else R.drawable.ic_arrow_forward
+        val buttons = listOf(
+            Triple("collapse", collapseIcon, { collapse() }),
+            Triple("back", R.drawable.que, { onBackClick?.invoke(); restartAutoCollapse() }),
+            Triple("forward", R.drawable.ic_arrow_forward, { onForwardClick?.invoke(); restartAutoCollapse() }),
+            Triple("refresh", R.drawable.ic_refresh, { onRefreshClick?.invoke(); restartAutoCollapse() }),
+            Triple("close", R.drawable.ic_close_24, { onCloseClick?.invoke(); restartAutoCollapse() }),
+        )
+        for ((tag, iconRes, action) in buttons) {
+            val btn = ImageView(context).apply {
+                layoutParams = LinearLayout.LayoutParams(dp(44), barHeight)
+                setImageResource(iconRes)
+                setColorFilter(Color.WHITE)
+                scaleType = ImageView.ScaleType.CENTER
+                setPadding(dp(10), dp(10), dp(10), dp(10))
+                setOnClickListener { action() }
+                this.tag = tag
+            }
+            expandedBar.addView(btn)
+        }
+    }
+
+    private fun handleTouch(event: MotionEvent): Boolean {
+        when (event.action) {
+            MotionEvent.ACTION_DOWN -> {
+                animate().cancel()
+                isClick = true
+                isDragging = false
+                downRawX = event.rawX
+                downRawY = event.rawY
+                downTransX = translationX
+                downTransY = translationY
+                cancelAutoCollapse()
+                return true
+            }
+            MotionEvent.ACTION_MOVE -> {
+                val dx = abs(event.rawX - downRawX)
+                val dy = abs(event.rawY - downRawY)
+                if (dx > touchSlop || dy > touchSlop) {
+                    isClick = false
+                    isDragging = true
+                }
+                if (isDragging) {
+                    translationX = (downTransX + event.rawX - downRawX)
+                        .coerceIn(-width / 2f, (screenWidth - width / 2).toFloat())
+                    translationY = (downTransY + event.rawY - downRawY)
+                        .coerceIn(statusBarHeight.toFloat(), (screenHeight - navBarHeight - height).toFloat())
+                }
+                return true
+            }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                if (isClick) {
+                    if (isExpanded) {
+                        dispatchClickToBarChild(event)
+                    } else {
+                        expand()
+                    }
+                }
+                if (!isClick || isExpanded) {
+                    snapToEdge()
+                }
+                if (isExpanded) {
+                    startAutoCollapse()
+                }
+                return true
+            }
+        }
+        return false
+    }
+
+    private fun dispatchClickToBarChild(event: MotionEvent) {
+        val localX = event.x
+        val localY = event.y
+        for (i in 0 until expandedBar.childCount) {
+            val child = expandedBar.getChildAt(i)
+            val rect = Rect()
+            child.getHitRect(rect)
+            if (rect.contains(localX.toInt(), localY.toInt())) {
+                child.performClick()
+                break
+            }
+        }
+    }
+
+    private fun snapToEdge() {
+        val viewWidth = if (isExpanded) expandedBar.width else fabSize
+        val centerX = translationX + viewWidth / 2f
+        isOnLeftEdge = centerX < screenWidth / 2f
+
+        val targetX = if (isOnLeftEdge) {
+            edgeMargin.toFloat()
+        } else {
+            (screenWidth - viewWidth - edgeMargin).toFloat()
+        }
+
+        val minY = statusBarHeight.toFloat()
+        val maxY = (screenHeight - navBarHeight - height).toFloat().coerceAtLeast(minY)
+        val targetY = translationY.coerceIn(minY, maxY)
+
+        animate()
+            .translationX(targetX)
+            .translationY(targetY)
+            .setDuration(snapDuration)
+            .start()
+    }
+
+    private fun startAutoCollapse() {
+        cancelAutoCollapse()
+        handler.postDelayed(collapseRunnable, autoCollapseDelay)
+    }
+
+    private fun restartAutoCollapse() {
+        if (isExpanded) {
+            startAutoCollapse()
+        }
+    }
+
+    private fun cancelAutoCollapse() {
+        handler.removeCallbacks(collapseRunnable)
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        cancelAutoCollapse()
+    }
+}

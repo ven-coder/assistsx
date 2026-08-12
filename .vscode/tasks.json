@@ -1,0 +1,90 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Android: Build, Install & Run",
+            "detail": "编译 + 安装 + 启动应用 (不调试, 默认构建任务 ⇧⌘B)",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "${workspaceFolder}/.vscode/android-debug.sh",
+                "build-install-run"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Android: Build, Install & Run (for panel)",
+            "detail": "编译 + 安装 + 启动 + JDWP 转发 (供调试面板 Run 配置调用)",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "${workspaceFolder}/.vscode/android-debug.sh",
+                "build-install-run-attach"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Android: Build, Install & Launch (wait debugger)",
+            "detail": "Gradle installDebug → 重启应用(等待调试器) → 转发 JDWP 8700",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "${workspaceFolder}/.vscode/android-debug.sh",
+                "build-install-launch"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Android: Launch & Forward (no rebuild)",
+            "detail": "跳过编译, 重启应用(等待调试器) → 转发 JDWP 8700",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "${workspaceFolder}/.vscode/android-debug.sh",
+                "launch"
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Android: Assemble Debug",
+            "detail": "仅编译 :app:assembleDebug",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "${workspaceFolder}/.vscode/android-debug.sh",
+                "assemble"
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        }
+    ]
+}

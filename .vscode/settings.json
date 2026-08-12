@@ -1,0 +1,12 @@
+{
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.compile.nullAnalysis.mode": "disabled",
+    "search.exclude": {
+        "**/build": true,
+        "**/.gradle": true
+    },
+    "files.watcherExclude": {
+        "**/build/**": true,
+        "**/.gradle/**": true
+    }
+}
