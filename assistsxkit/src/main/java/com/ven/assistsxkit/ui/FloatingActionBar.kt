@@ -95,11 +95,11 @@ class FloatingActionBar(context: Context) : FrameLayout(context) {
         val metrics = activity.resources.displayMetrics
         screenWidth = metrics.widthPixels
 
-        isOnLeftEdge = false
+        isOnLeftEdge = true
         post {
             val rect = visibleRect()
-            translationX = (screenWidth - fabSize).toFloat()
-            translationY = (rect.top + rect.height() / 3).toFloat()
+            translationX = 0f
+            translationY = (rect.bottom - fabSize).toFloat()
         }
     }
 
@@ -128,17 +128,21 @@ class FloatingActionBar(context: Context) : FrameLayout(context) {
     private fun rebuildBarButtons() {
         expandedBar.removeAllViews()
         val collapseIcon = if (isOnLeftEdge) R.drawable.que else R.drawable.ic_arrow_forward
-        val buttons = listOf(
-            Triple("collapse", collapseIcon, { collapse() }),
-            Triple("back", R.drawable.ic_arrow_back_bar_24, { onBackClick?.invoke(); restartAutoCollapse() }),
-            Triple("forward", R.drawable.ic_arrow_forward_bar_24, { onForwardClick?.invoke(); restartAutoCollapse() }),
-            Triple("refresh", R.drawable.ic_refresh_circle_24, { onRefreshClick?.invoke(); restartAutoCollapse() }),
-            Triple("close", R.drawable.ic_exit_24, { onCloseClick?.invoke(); restartAutoCollapse() }),
-        )
+        val collapse = Triple("collapse", collapseIcon, { collapse() })
+        val back = Triple("back", R.drawable.ic_arrow_back_bar_24, { onBackClick?.invoke(); restartAutoCollapse() })
+        val forward = Triple("forward", R.drawable.ic_arrow_forward_bar_24, { onForwardClick?.invoke(); restartAutoCollapse() })
+        val refresh = Triple("refresh", R.drawable.ic_refresh_circle_24, { onRefreshClick?.invoke(); restartAutoCollapse() })
+        val close = Triple("close", R.drawable.ic_exit_24, { onCloseClick?.invoke(); restartAutoCollapse() })
         // The bar grows rightward from a left-edge anchor and leftward from a
-        // right-edge anchor, so the order must be mirrored on the right to keep
-        // the collapse button nearest the edge the FAB anchors to.
-        val ordered = if (isOnLeftEdge) buttons else buttons.reversed()
+        // right-edge anchor, so the collapse button must sit nearest the anchor
+        // edge. On the right, close/refresh mirror the left bar's outer end, with
+        // refresh directly to the right of close; back/forward keep their fixed
+        // left-to-right order on both sides.
+        val ordered = if (isOnLeftEdge) {
+            listOf(collapse, back, forward, refresh, close)
+        } else {
+            listOf(close, refresh, back, forward, collapse)
+        }
         for ((tag, iconRes, action) in ordered) {
             val btn = ImageView(context).apply {
                 layoutParams = LinearLayout.LayoutParams(dp(44), barHeight)
