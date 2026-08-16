@@ -17,7 +17,7 @@ import com.ven.assistsxkit.databinding.FragmentContainerActivityBinding
 import com.ven.assistsxkit.model.Plugin
 import com.ven.assistsxkit.server.PluginWebServerManager
 
-class IndexActivity : AppCompatActivity() {
+open class IndexActivity : AppCompatActivity() {
 
     companion object {
         fun open(plugin: Plugin) {
