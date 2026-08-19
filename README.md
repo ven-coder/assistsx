@@ -42,7 +42,7 @@ dependencies {
 
 ### 发布 assistsxkit 到 Maven Central
 
-版本号在根目录 `build.gradle` 的 `assistsxkitVersion`（当前 **0.0.3**）中维护。
+版本号在根目录 `build.gradle` 的 `assistsxkitVersion`（当前 **0.0.5**）中维护。
 
 ```bash
 ./gradlew publishAllToMavenCentral
@@ -51,7 +51,7 @@ dependencies {
 发布后坐标：
 
 ```gradle
-implementation "io.github.ven-coder:assistsxkit:0.0.3"
+implementation "io.github.ven-coder:assistsxkit:0.0.5"
 ```
 
 ##### 作者Wechat

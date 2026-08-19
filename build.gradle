@@ -11,7 +11,7 @@ buildscript {
         // assists 系列（Maven Central: io.github.ven-coder）
         assistsVersion = "3.5.5"
         mavenGroupId = "io.github.ven-coder"
-        assistsxkitVersion = "0.0.4"
+        assistsxkitVersion = "0.0.5"
 
         // SDK 版本（与 assists 3.5.0 对齐）
         compileSdk = 36

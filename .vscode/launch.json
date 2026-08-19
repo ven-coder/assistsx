@@ -3,31 +3,13 @@
     "configurations": [
         {
             "type": "java",
-            "name": "Android: Build, Install & Run",
+            "name": "assistsx",
             "request": "attach",
             "hostName": "127.0.0.1",
             "port": 8700,
             "noDebug": true,
             "timeout": 30000,
             "preLaunchTask": "Android: Build, Install & Run (for panel)"
-        },
-        {
-            "type": "java",
-            "name": "Android: Debug (build & install)",
-            "request": "attach",
-            "hostName": "127.0.0.1",
-            "port": 8700,
-            "timeout": 60000,
-            "preLaunchTask": "Android: Build, Install & Launch (wait debugger)"
-        },
-        {
-            "type": "java",
-            "name": "Android: Debug (attach only)",
-            "request": "attach",
-            "hostName": "127.0.0.1",
-            "port": 8700,
-            "timeout": 30000,
-            "preLaunchTask": "Android: Launch & Forward (no rebuild)"
         }
     ]
 }

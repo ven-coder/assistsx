@@ -51,6 +51,9 @@ class FloatingActionBar(context: Context) : FrameLayout(context) {
     var onForwardClick: (() -> Unit)? = null
     var onRefreshClick: (() -> Unit)? = null
 
+    /** 是否显示退出（关闭）按钮，默认 true；宿主可设置为 false 隐藏 */
+    var showCloseButton: Boolean = true
+
     init {
         fabIcon = ImageView(context).apply {
             setImageResource(R.drawable.ic_menu_24)
@@ -143,7 +146,9 @@ class FloatingActionBar(context: Context) : FrameLayout(context) {
         } else {
             listOf(close, refresh, back, forward, collapse)
         }
-        for ((tag, iconRes, action) in ordered) {
+        // 过滤退出按钮：showCloseButton=false 时不展示
+        val buttons = ordered.filter { it.first != "close" || showCloseButton }
+        for ((tag, iconRes, action) in buttons) {
             val btn = ImageView(context).apply {
                 layoutParams = LinearLayout.LayoutParams(dp(44), barHeight)
                 setImageResource(iconRes)

@@ -33,6 +33,38 @@ object PluginWebViewInterceptors {
             return@intercept CallInterceptResult(true, GsonUtils.toJson(response))
         }
 
+        if (request.method == PluginCallMethod.setActionBarVisible) {
+            val visible = request.arguments?.get("visible")?.takeIf { !it.isJsonNull }?.asBoolean ?: true
+            val ok = PluginChromeController.setActionBarVisible(visible)
+            return@intercept CallInterceptResult(true, GsonUtils.toJson(request.createResponse(code = if (ok) 0 else -1, data = ok)))
+        }
+
+        if (request.method == PluginCallMethod.setFloatingButtonVisible) {
+            val visible = request.arguments?.get("visible")?.takeIf { !it.isJsonNull }?.asBoolean ?: true
+            val ok = PluginChromeController.setFloatingButtonVisible(visible)
+            return@intercept CallInterceptResult(true, GsonUtils.toJson(request.createResponse(code = if (ok) 0 else -1, data = ok)))
+        }
+
+        if (request.method == PluginCallMethod.webViewGoBack) {
+            val ok = PluginChromeController.webViewGoBack()
+            return@intercept CallInterceptResult(true, GsonUtils.toJson(request.createResponse(code = if (ok) 0 else -1, data = ok)))
+        }
+
+        if (request.method == PluginCallMethod.webViewGoForward) {
+            val ok = PluginChromeController.webViewGoForward()
+            return@intercept CallInterceptResult(true, GsonUtils.toJson(request.createResponse(code = if (ok) 0 else -1, data = ok)))
+        }
+
+        if (request.method == PluginCallMethod.webViewReload) {
+            val ok = PluginChromeController.webViewReload()
+            return@intercept CallInterceptResult(true, GsonUtils.toJson(request.createResponse(code = if (ok) 0 else -1, data = ok)))
+        }
+
+        if (request.method == PluginCallMethod.exitPlugin) {
+            val ok = PluginChromeController.exitPlugin()
+            return@intercept CallInterceptResult(true, GsonUtils.toJson(request.createResponse(code = if (ok) 0 else -1, data = ok)))
+        }
+
         if (request.method == CallMethod.loadWebViewOverlay || request.method == FloatCallMethod.open) {
             val url = request.arguments?.get("url")?.asString ?: ""
             PluginWebServerManager.getRunningPlugin()?.getDomain()?.let { domain ->
