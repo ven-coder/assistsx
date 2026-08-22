@@ -8,7 +8,6 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.graphics.toColorInt
 import androidx.core.view.WindowCompat
-import androidx.core.view.isInvisible
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.blankj.utilcode.util.ActivityUtils
 import com.blankj.utilcode.util.BarUtils
@@ -35,6 +34,12 @@ open class IndexActivity : AppCompatActivity() {
     /** 插件页悬浮操作条，供子类按需配置（如隐藏退出按钮） */
     protected lateinit var floatingActionBar: FloatingActionBar
 
+    /** 进入页面时顶部 ActionBar 是否默认可见，子类可覆写为 false 以默认隐藏 */
+    open val defaultActionBarVisible: Boolean = true
+
+    /** 进入页面时悬浮操作按钮是否默认可见，子类可覆写为 false 以默认隐藏 */
+    open val defaultFloatingButtonVisible: Boolean = true
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, true)
@@ -44,7 +49,7 @@ open class IndexActivity : AppCompatActivity() {
         setSupportActionBar(binding.toolbar)
         binding.toolbar.setTitleTextColor(resources.getColor(R.color.colorPrimary, theme))
         binding.toolbar.setSubtitleTextColor(resources.getColor(R.color.colorPrimary, theme))
-        binding.toolbar.isInvisible
+        binding.toolbar.visibility = if (defaultActionBarVisible) View.VISIBLE else View.GONE
         FragmentUtils.add(supportFragmentManager, IndexFragment.get(intent.getSerializableExtra("plugin") as Plugin).apply {
             onReceivedTitle = {
                 this@IndexActivity.binding.toolbar.title = it
@@ -75,6 +80,7 @@ open class IndexActivity : AppCompatActivity() {
             }
             attachToActivity(this@IndexActivity)
         }
+        floatingActionBar.visibility = if (defaultFloatingButtonVisible) View.VISIBLE else View.GONE
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
