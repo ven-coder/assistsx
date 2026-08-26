@@ -3,8 +3,15 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fitsSystemWindows="true"
     android:orientation="vertical">
+
+    <!-- 状态栏占位 View：默认占位避免原生布局延伸到状态栏，
+         高度/显隐/背景色由 IndexActivity + JS barUtils 控制 -->
+    <View
+        android:id="@+id/status_bar_placeholder"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:background="#23252A" />
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"

@@ -65,6 +65,21 @@ object PluginWebViewInterceptors {
             return@intercept CallInterceptResult(true, GsonUtils.toJson(request.createResponse(code = if (ok) 0 else -1, data = ok)))
         }
 
+        if (request.method == PluginCallMethod.setPluginStatusBarPlaceholderVisible) {
+            val visible = request.arguments?.get("visible")?.takeIf { !it.isJsonNull }?.asBoolean ?: true
+            val ok = PluginChromeController.setStatusBarPlaceholderVisible(visible)
+            return@intercept CallInterceptResult(true, GsonUtils.toJson(request.createResponse(code = if (ok) 0 else -1, data = ok)))
+        }
+
+        if (request.method == PluginCallMethod.setPluginStatusBarPlaceholderColor) {
+            val color: Int? = request.arguments?.get("color")?.asInt
+            if (color == null) {
+                return@intercept CallInterceptResult(true, GsonUtils.toJson(request.createResponse(code = -1, message = "color is required", data = false)))
+            }
+            val ok = PluginChromeController.setStatusBarPlaceholderColor(color)
+            return@intercept CallInterceptResult(true, GsonUtils.toJson(request.createResponse(code = if (ok) 0 else -1, data = ok)))
+        }
+
         if (request.method == CallMethod.loadWebViewOverlay || request.method == FloatCallMethod.open) {
             val url = request.arguments?.get("url")?.asString ?: ""
             PluginWebServerManager.getRunningPlugin()?.getDomain()?.let { domain ->

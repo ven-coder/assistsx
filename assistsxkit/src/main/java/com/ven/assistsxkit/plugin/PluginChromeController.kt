@@ -75,6 +75,22 @@ object PluginChromeController {
         return true
     }
 
+    /** 控制插件页顶部状态栏占位 View 显隐；返回宿主是否存在且已派发 */
+    @JvmStatic
+    fun setStatusBarPlaceholderVisible(visible: Boolean): Boolean {
+        val host = currentHost() ?: return false
+        host.runOnUiThread { host.setStatusBarPlaceholderVisible(visible) }
+        return true
+    }
+
+    /** 设置插件页顶部状态栏占位 View 背景色；返回宿主是否存在且已派发 */
+    @JvmStatic
+    fun setStatusBarPlaceholderColor(color: Int): Boolean {
+        val host = currentHost() ?: return false
+        host.runOnUiThread { host.setStatusBarPlaceholderColor(color) }
+        return true
+    }
+
     private fun currentHost(): IndexActivity? {
         val host = hostRef?.get() ?: return null
         return if (!host.isFinishing && !host.isDestroyed) host else null

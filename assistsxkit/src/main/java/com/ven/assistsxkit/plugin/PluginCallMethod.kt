@@ -23,4 +23,10 @@ object PluginCallMethod {
 
     /** 退出当前插件（关闭页面并清理悬浮窗与本地服务） */
     const val exitPlugin = "exitPlugin"
+
+    /** 控制插件页顶部状态栏占位 View 显隐 */
+    const val setPluginStatusBarPlaceholderVisible = "setPluginStatusBarPlaceholderVisible"
+
+    /** 设置插件页顶部状态栏占位 View 背景色（Android color int） */
+    const val setPluginStatusBarPlaceholderColor = "setPluginStatusBarPlaceholderColor"
 }

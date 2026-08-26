@@ -1,13 +1,15 @@
 package com.ven.assistsxkit.ui
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
 import android.webkit.WebView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.graphics.toColorInt
-import androidx.core.view.WindowCompat
+import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.blankj.utilcode.util.ActivityUtils
 import com.blankj.utilcode.util.BarUtils
@@ -42,10 +44,12 @@ open class IndexActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        WindowCompat.setDecorFitsSystemWindows(window, true)
-        BarUtils.setStatusBarColor(this, "#23252A".toColorInt(), true)
-        BarUtils.setStatusBarLightMode(this, false)
         setContentView(binding.root)
+        BarUtils.setStatusBarColor(this, Color.TRANSPARENT)
+        // 状态栏占位 View：资源高度取决于设备状态栏，按顶部占位为原生布局预留空间
+        binding.statusBarPlaceholder.updateLayoutParams<ViewGroup.LayoutParams> {
+            height = BarUtils.getStatusBarHeight()
+        }
         setSupportActionBar(binding.toolbar)
         binding.toolbar.setTitleTextColor(resources.getColor(R.color.colorPrimary, theme))
         binding.toolbar.setSubtitleTextColor(resources.getColor(R.color.colorPrimary, theme))
@@ -105,6 +109,16 @@ open class IndexActivity : AppCompatActivity() {
     override fun onDestroy() {
         PluginChromeController.unbind(this)
         super.onDestroy()
+    }
+
+    /** 控制插件页顶部状态栏占位 View 显隐（由 JS Bridge 拦截器派发） */
+    internal fun setStatusBarPlaceholderVisible(visible: Boolean) {
+        binding.statusBarPlaceholder.isVisible = visible
+    }
+
+    /** 设置插件页顶部状态栏占位 View 背景色（由 JS Bridge 拦截器派发） */
+    internal fun setStatusBarPlaceholderColor(color: Int) {
+        binding.statusBarPlaceholder.setBackgroundColor(color)
     }
 
     /** 获取当前 IndexFragment 内的 WebView（供 Chrome 控制器调用） */
