@@ -102,7 +102,7 @@ class FloatingActionBar(context: Context) : FrameLayout(context) {
         post {
             val rect = visibleRect()
             translationX = 0f
-            translationY = (rect.bottom - fabSize).toFloat()
+            translationY = (rect.bottom - fabSize - dp(100)).toFloat()
         }
     }
 

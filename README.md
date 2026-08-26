@@ -22,7 +22,7 @@
 
 ## 依赖集成（assists 库）
 
-当前使用 Assists **3.5.4**，从 Maven Central 拉取：
+当前使用 Assists **3.5.6**，从 Maven Central 拉取：
 
 ```gradle
 repositories {
@@ -30,11 +30,11 @@ repositories {
 }
 
 dependencies {
-    api "io.github.ven-coder:assists-base:3.5.4"
-    api "io.github.ven-coder:assists-web:3.5.4"
-    api "io.github.ven-coder:assists-mp:3.5.4"
-    api "io.github.ven-coder:assists-log:3.5.4"
-    api "io.github.ven-coder:assists-ime:3.5.4"
+    api "io.github.ven-coder:assists-base:3.5.6"
+    api "io.github.ven-coder:assists-web:3.5.6"
+    api "io.github.ven-coder:assists-mp:3.5.6"
+    api "io.github.ven-coder:assists-log:3.5.6"
+    api "io.github.ven-coder:assists-ime:3.5.6"
 }
 ```
 
@@ -42,7 +42,7 @@ dependencies {
 
 ### 发布 assistsxkit 到 Maven Central
 
-版本号在根目录 `build.gradle` 的 `assistsxkitVersion`（当前 **0.0.5**）中维护。
+版本号在根目录 `build.gradle` 的 `assistsxkitVersion`（当前 **0.0.6**）中维护。
 
 ```bash
 ./gradlew publishAllToMavenCentral
@@ -51,7 +51,7 @@ dependencies {
 发布后坐标：
 
 ```gradle
-implementation "io.github.ven-coder:assistsxkit:0.0.5"
+implementation "io.github.ven-coder:assistsxkit:0.0.6"
 ```
 
 ##### 作者Wechat
