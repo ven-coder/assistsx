@@ -978,6 +978,8 @@ open class InstalledPluginsFragment : Fragment() {
                 copyAssetsToPluginDir(defaultAssetsPlugin, pluginDir)
 
                 // 从配置文件创建默认插件对象
+                // index 兼容两种字段命名：Vue 脚手架 config.json 用 index，旧格式 assistsx_plugin_config.json 用 main
+                val defaultIndex = configJson.optString("index").ifBlank { configJson.optString("main") }
                 val defaultPlugin = Plugin(
                     id = UUID.randomUUID().toString(),
                     name = configJson.optString("name", ""),
@@ -991,6 +993,7 @@ open class InstalledPluginsFragment : Fragment() {
                     needScreenCapture = configJson.optBoolean("needScreenCapture", false),
                     overlayTitle = configJson.optString("overlayTitle", ""),
                     main = configJson.optString("main", ""),
+                    index = defaultIndex,
                     icon = configJson.optString("icon", "")
                 )
 
@@ -1004,13 +1007,29 @@ open class InstalledPluginsFragment : Fragment() {
 
     /**
      * 读取默认插件配置文件
+     * 兼容三种命名，与 findConfigFile 优先级一致：assistsx_plugin_config.json / plugin.json / config.json
+     * （Vue 脚手架产物为 config.json，旧格式为 assistsx_plugin_config.json）
      */
     private fun readDefaultPluginConfig(): JSONObject {
         return try {
             val assetManager = context?.assets ?: throw Exception("无法获取AssetManager")
-            val configContent = assetManager.open("$defaultAssetsPlugin/assistsx_plugin_config.json").use { inputStream ->
-                inputStream.bufferedReader().use { it.readText() }
-            }
+            val possibleConfigNames = listOf(
+                "assistsx_plugin_config.json",
+                "plugin.json",
+                "config.json"
+            )
+            val configContent = possibleConfigNames
+                .mapNotNull { configName ->
+                    val assetPath = "$defaultAssetsPlugin/$configName"
+                    runCatching {
+                        assetManager.open(assetPath).use { inputStream ->
+                            inputStream.bufferedReader().use { it.readText() }
+                        }
+                    }.getOrNull()
+                }
+                .firstOrNull()
+                ?: throw Exception("未找到插件配置文件，已尝试：${possibleConfigNames.joinToString()}")
+
             val configJson = JSONObject(configContent)
 
             // 验证必需字段
