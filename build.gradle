@@ -9,7 +9,7 @@ buildscript {
         versionName = "0.0.6-3.5.6-open"
 
         // assists 系列（Maven Central: io.github.ven-coder）
-        assistsVersion = "3.5.6"
+        assistsVersion = "3.5.7"
         mavenGroupId = "io.github.ven-coder"
         assistsxkitVersion = "0.0.6"
 
