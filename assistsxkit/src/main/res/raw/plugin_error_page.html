@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>页面加载失败</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+        height: 100%;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+            "PingFang SC", "Microsoft YaHei", sans-serif;
+        background: #f5f6f8;
+        color: #333;
+    }
+    body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+    }
+    .card {
+        width: 100%;
+        max-width: 420px;
+        background: #fff;
+        border-radius: 16px;
+        padding: 32px 24px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        text-align: center;
+    }
+    .icon {
+        font-size: 56px;
+        line-height: 1;
+        margin-bottom: 16px;
+    }
+    h1 {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 12px;
+    }
+    .type {
+        display: inline-block;
+        font-size: 13px;
+        color: #666;
+        background: #f0f2f5;
+        border-radius: 999px;
+        padding: 4px 12px;
+        margin-bottom: 20px;
+    }
+    .meta {
+        font-size: 13px;
+        color: #e74c3c;
+        margin-bottom: 24px;
+    }
+    .actions {
+        display: flex;
+        gap: 12px;
+    }
+    .btn {
+        flex: 1;
+        height: 44px;
+        border: none;
+        border-radius: 10px;
+        font-size: 15px;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .btn.primary {
+        background: #3b82f6;
+        color: #fff;
+    }
+    .btn.primary:active { background: #2f6fe0; }
+    .btn.secondary {
+        background: #eef0f3;
+        color: #555;
+    }
+    .btn.secondary:active { background: #e2e5ea; }
+</style>
+</head>
+<body>
+<div class="card">
+    <div class="icon">⚠️</div>
+    <h1>页面加载失败</h1>
+    <div class="type">{{PLUGIN_TYPE}}</div>
+    <div class="meta">错误码 {{CODE}} · {{DESC}}</div>
+    <div class="actions">
+        <button class="btn primary" onclick="retry()">重试</button>
+        <button class="btn secondary" onclick="closePage()">关闭</button>
+    </div>
+</div>
+<script>
+    // 通过现有 assistsx Bridge 与 Native 交互（错误页由 loadDataWithBaseURL 加载，
+    // addJavascriptInterface 注入的 assistsx 依然可用）
+    function bridgeCall(method, args) {
+        try {
+            var payload = JSON.stringify({ method: method, arguments: args || {} });
+            window.assistsx.call(payload);
+        } catch (e) {
+            console.error("Error calling assistsx:", e);
+        }
+    }
+
+    // {{RETRY_URL_JSON}} 由 Native 注入为 JSON 字符串字面量（已转义，安全嵌入）
+    function retry() {
+        bridgeCall("webErrorRetry", { url: {{RETRY_URL_JSON}} });
+    }
+
+    function closePage() {
+        bridgeCall("webErrorClose");
+    }
+</script>
+</body>
+</html>

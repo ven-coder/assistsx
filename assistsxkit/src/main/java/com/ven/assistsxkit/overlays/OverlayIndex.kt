@@ -18,12 +18,16 @@ import com.ven.assistsxkit.databinding.WebOverlayBinding
 import com.ven.assistsxkit.model.Plugin
 import com.ven.assistsxkit.model.isRemote
 import com.ven.assistsxkit.model.url
+import com.ven.assistsxkit.plugin.PluginErrorPageInteractor
 import com.ven.assistsxkit.server.PluginWebServerManager
 
 @SuppressLint("StaticFieldLeak")
 object OverlayIndex : AssistsServiceListener {
 
     private var plugin: Plugin? = null
+
+    /** 错误页 Handler 实例（需为字段以保证 PluginErrorPageInteractor.unbind 引用相等） */
+    private var errorPageHandler: PluginErrorPageInteractor.Handler? = null
 
     private var viewBinding: WebOverlayBinding? = null
         get() {
@@ -91,6 +95,19 @@ object OverlayIndex : AssistsServiceListener {
         }
         this.plugin = plugin
         PluginWebServerManager.setRunningPlugin(plugin)
+        // 注册错误页交互：错误页 JS 触发「重试/关闭」时由本浮窗处理
+        errorPageHandler = object : PluginErrorPageInteractor.Handler {
+            override fun onErrorRetry(url: String?) {
+                val target = url?.takeIf { it.isNotBlank() }
+                    ?: this@OverlayIndex.plugin?.url()
+                if (target.isNullOrBlank()) return
+                viewBinding?.web?.post { viewBinding?.web?.loadUrl(target) }
+            }
+
+            override fun onErrorClose() {
+                hide()
+            }
+        }.also { PluginErrorPageInteractor.bind(it) }
         if (!AssistsWindowManager.contains(assistWindowWrapper?.getView())) {
             AssistsWindowManager.add(assistWindowWrapper)
         }
@@ -119,6 +136,8 @@ object OverlayIndex : AssistsServiceListener {
     }
 
     fun clear() {
+        errorPageHandler?.let { PluginErrorPageInteractor.unbind(it) }
+        errorPageHandler = null
         viewBinding?.web?.stopLoading()
         viewBinding?.web?.clearHistory()
         viewBinding?.web?.removeAllViews()

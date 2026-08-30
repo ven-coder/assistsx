@@ -29,4 +29,10 @@ object PluginCallMethod {
 
     /** 设置插件页顶部状态栏占位 View 背景色（Android color int） */
     const val setPluginStatusBarPlaceholderColor = "setPluginStatusBarPlaceholderColor"
+
+    /** 错误页「重试」：重新加载失败 URL */
+    const val webErrorRetry = "webErrorRetry"
+
+    /** 错误页「关闭」：按容器语义退出（应用内关闭 / 浮窗隐藏清理） */
+    const val webErrorClose = "webErrorClose"
 }

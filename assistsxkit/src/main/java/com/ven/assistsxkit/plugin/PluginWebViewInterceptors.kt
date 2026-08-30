@@ -65,6 +65,17 @@ object PluginWebViewInterceptors {
             return@intercept CallInterceptResult(true, GsonUtils.toJson(request.createResponse(code = if (ok) 0 else -1, data = ok)))
         }
 
+        if (request.method == PluginCallMethod.webErrorRetry) {
+            val url = request.arguments?.get("url")?.takeIf { !it.isJsonNull }?.asString
+            val ok = PluginErrorPageInteractor.retry(url)
+            return@intercept CallInterceptResult(true, GsonUtils.toJson(request.createResponse(code = if (ok) 0 else -1, data = ok)))
+        }
+
+        if (request.method == PluginCallMethod.webErrorClose) {
+            val ok = PluginErrorPageInteractor.close()
+            return@intercept CallInterceptResult(true, GsonUtils.toJson(request.createResponse(code = if (ok) 0 else -1, data = ok)))
+        }
+
         if (request.method == PluginCallMethod.setPluginStatusBarPlaceholderVisible) {
             val visible = request.arguments?.get("visible")?.takeIf { !it.isJsonNull }?.asBoolean ?: true
             val ok = PluginChromeController.setStatusBarPlaceholderVisible(visible)

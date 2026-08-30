@@ -16,9 +16,12 @@ import com.blankj.utilcode.util.BarUtils
 import com.blankj.utilcode.util.FragmentUtils
 import com.ven.assists.window.AssistsWindowManager
 import com.ven.assistsxkit.R
+import com.ven.assistsxkit.XWebview
 import com.ven.assistsxkit.databinding.FragmentContainerActivityBinding
 import com.ven.assistsxkit.model.Plugin
+import com.ven.assistsxkit.model.url
 import com.ven.assistsxkit.plugin.PluginChromeController
+import com.ven.assistsxkit.plugin.PluginErrorPageInteractor
 import com.ven.assistsxkit.server.PluginWebServerManager
 
 open class IndexActivity : AppCompatActivity() {
@@ -35,6 +38,9 @@ open class IndexActivity : AppCompatActivity() {
 
     /** 插件页悬浮操作条，供子类按需配置（如隐藏退出按钮） */
     protected lateinit var floatingActionBar: FloatingActionBar
+
+    /** 错误页 Handler 实例（需为字段以保证 PluginErrorPageInteractor.unbind 引用相等） */
+    private var errorPageHandler: PluginErrorPageInteractor.Handler? = null
 
     /** 进入页面时顶部 ActionBar 是否默认可见，子类可覆写为 false 以默认隐藏 */
     open val defaultActionBarVisible: Boolean = true
@@ -104,9 +110,37 @@ open class IndexActivity : AppCompatActivity() {
         })
 
         PluginChromeController.bind(this)
+
+        // 注册错误页交互：错误页 JS 触发「重试/关闭」时由本容器处理
+        errorPageHandler = object : PluginErrorPageInteractor.Handler {
+            override fun onErrorRetry(url: String?) {
+                runOnUiThread {
+                    if (errorPageHandler == null) return@runOnUiThread
+                    val webView = findIndexWebView()
+                    val target = url?.takeIf { it.isNotBlank() }
+                    if (webView == null) return@runOnUiThread
+                    if (target == null && webView is XWebview) {
+                        webView.retryFailedUrl()
+                    } else {
+                        webView.loadUrl(target ?: pluginUrl())
+                    }
+                }
+            }
+
+            override fun onErrorClose() {
+                runOnUiThread { closePluginAndFinish() }
+            }
+        }.also { PluginErrorPageInteractor.bind(it) }
+    }
+
+    /** 当前插件 URL（用于错误页重试兜底） */
+    private fun pluginUrl(): String {
+        return (intent.getSerializableExtra("plugin") as? Plugin)?.url() ?: ""
     }
 
     override fun onDestroy() {
+        errorPageHandler?.let { PluginErrorPageInteractor.unbind(it) }
+        errorPageHandler = null
         PluginChromeController.unbind(this)
         super.onDestroy()
     }
