@@ -34,6 +34,7 @@ import java.util.UUID
 import com.google.android.material.textfield.TextInputEditText
 import com.ven.assistsxkit.model.Plugin
 import com.ven.assistsxkit.model.createDefaultRemotePlugin
+import com.ven.assistsxkit.model.isRemote
 import com.ven.assistsxkit.model.withRemoteDefaults
 import com.ven.assistsxkit.overlays.OverlayWeb
 import com.ven.assists.utils.CoroutineWrapper
@@ -878,8 +879,11 @@ open class InstalledPluginsFragment : Fragment() {
 
     // 显示插件详情对话框
     private fun showPluginDetailDialog(plugin: Plugin) {
+        // 根据插件路径判断类型：http 开头为在线插件，否则为本地插件
+        val pluginType = if (plugin.isRemote()) "在线" else "本地"
         val message = """
             名称：${plugin.name}
+            类型：$pluginType
             版本：${plugin.versionName.ifEmpty { plugin.version }}
             描述：${plugin.description}
             包名：${plugin.packageName}
