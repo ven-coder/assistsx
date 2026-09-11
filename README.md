@@ -30,11 +30,11 @@ repositories {
 }
 
 dependencies {
-    api "io.github.ven-coder:assists-base:3.5.6"
-    api "io.github.ven-coder:assists-web:3.5.6"
-    api "io.github.ven-coder:assists-mp:3.5.6"
-    api "io.github.ven-coder:assists-log:3.5.6"
-    api "io.github.ven-coder:assists-ime:3.5.6"
+    api "io.github.ven-coder:assists-base:3.5.9"
+    api "io.github.ven-coder:assists-web:3.5.9"
+    api "io.github.ven-coder:assists-mp:3.5.9"
+    api "io.github.ven-coder:assists-log:3.5.9"
+    api "io.github.ven-coder:assists-ime:3.5.9"
 }
 ```
 
