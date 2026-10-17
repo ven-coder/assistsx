@@ -4,10 +4,14 @@ import android.content.Context
 import android.util.AttributeSet
 import com.ven.assists.web.ASWebView
 import com.ven.assistsxkit.util.ErrorPageLoader
+import com.ven.assistsxkit.web.event.AssistsxWebEventBus
 
 /**
  * AssistsX 插件 WebView：主 frame 加载失败时显示内置错误页，
  * 错误页通过 assistsx Bridge 与 Native 交互（重试 / 关闭）。
+ *
+ * 同时承担跨 WebView 事件总线的挂载点：插件主页 / 浮窗 / 旧 overlay 三类宿主都使用本类，
+ * 因此在这里注入 `assistsxEvent` 即可覆盖全部插件页面。
  */
 class XWebview @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null
@@ -20,12 +24,19 @@ class XWebview @JvmOverloads constructor(
     private var failedUrl: String? = null
 
     init {
+        // 跨 WebView 事件总线：注入 JS 接口并登记客户端（必须在首次 loadUrl 之前）
+        AssistsxWebEventBus.install(this)
         // 加载真实 http(s) 页面时说明已脱离错误页数据流，重置错误标志
         onPageStarting = { url ->
             if (url?.startsWith("http") == true) {
                 errorPageShowing = false
             }
         }
+    }
+
+    override fun onDetachedFromWindow() {
+        AssistsxWebEventBus.detach(this)
+        super.onDetachedFromWindow()
     }
 
     override fun onMainFrameError(failedUrl: String?, errorCode: Int, description: String) {

@@ -23,6 +23,7 @@ import com.ven.assistsxkit.model.url
 import com.ven.assistsxkit.plugin.PluginChromeController
 import com.ven.assistsxkit.plugin.PluginErrorPageInteractor
 import com.ven.assistsxkit.server.PluginWebServerManager
+import com.ven.assistsxkit.web.event.AssistsxWebEventBus
 
 open class IndexActivity : AppCompatActivity() {
 
@@ -191,9 +192,10 @@ open class IndexActivity : AppCompatActivity() {
         closePluginAndFinish()
     }
 
-    /** 关闭插件页面并清理悬浮窗与本地服务 */
+    /** 关闭插件页面并清理悬浮窗、事件总线客户端与本地服务 */
     internal fun closePluginAndFinish() {
         finish()
+        AssistsxWebEventBus.clearScope()
         AssistsWindowManager.removeAllWindow()
         PluginWebServerManager.stopServer()
     }

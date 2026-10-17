@@ -15,6 +15,7 @@ import com.ven.assistsxkit.model.Plugin
 import com.ven.assistsxkit.model.isRemote
 import com.ven.assistsxkit.model.url
 import com.ven.assistsxkit.server.PluginWebServerManager
+import com.ven.assistsxkit.web.event.AssistsxWebEventBus
 
 class IndexFragment : Fragment(), AssistsServiceListener {
 
@@ -89,6 +90,7 @@ class IndexFragment : Fragment(), AssistsServiceListener {
 
     override fun onDestroy() {
         super.onDestroy()
+        AssistsxWebEventBus.detach(binding.webView)
         binding.webView.destroy()
         binding.webView.removeAllViews()
         binding.webView.clearHistory()

@@ -15,6 +15,7 @@ import com.ven.assistsxkit.model.Plugin
 import com.ven.assistsxkit.model.url
 import com.ven.assistsxkit.plugin.PluginErrorPageInteractor
 import com.ven.assistsxkit.server.PluginWebServerManager
+import com.ven.assistsxkit.web.event.AssistsxWebEventBus
 
 @SuppressLint("StaticFieldLeak")
 object OverlayWeb : AssistsServiceListener {
@@ -118,6 +119,7 @@ object OverlayWeb : AssistsServiceListener {
     fun clear() {
         errorPageHandler?.let { PluginErrorPageInteractor.unbind(it) }
         errorPageHandler = null
+        viewBinding?.web?.let { AssistsxWebEventBus.detach(it) }
         viewBinding?.web?.stopLoading()
         viewBinding?.web?.clearHistory()
         viewBinding?.web?.removeAllViews()

@@ -6,6 +6,7 @@ import com.ven.assists.web.floating.FloatWindowBridge
 import com.ven.assistsxkit.XWebview
 import com.ven.assistsxkit.model.getDomain
 import com.ven.assistsxkit.server.PluginWebServerManager
+import com.ven.assistsxkit.web.event.AssistsxWebEventBus
 
 /**
  * AssistsX 插件 WebView 全局 Bridge 注册（应用启动时安装一次）
@@ -52,6 +53,13 @@ object PluginWebViewBridge {
                 url
             }
             FloatWindowBridge.webViewProvider = { context -> XWebview(context) }
+            // 跨 WebView 事件总线作用域：按当前运行插件隔离，切换插件时清空旧客户端
+            AssistsxWebEventBus.scopeProvider = {
+                PluginWebServerManager.getRunningPlugin()?.let { plugin ->
+                    plugin.packageName.ifBlank { plugin.path }
+                }
+            }
+            AssistsxWebEventBus.clearScope()
             installed = true
         }
     }
@@ -67,5 +75,7 @@ object PluginWebViewBridge {
         mmkvIntercept = null
         ASWebView.globalUrlTransform = null
         FloatWindowBridge.webViewProvider = null
+        AssistsxWebEventBus.scopeProvider = null
+        AssistsxWebEventBus.clearAll()
     }
 }
