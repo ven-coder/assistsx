@@ -61,10 +61,12 @@
         <activity
             android:name="com.ven.assistsxkit.SettingGuideActivity"
             android:launchMode="singleInstance"
+            android:screenOrientation="portrait"
             android:theme="@style/TransparentActivityTheme" />
         <activity
             android:name="com.ven.assistsxkit.ScanActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="portrait" />
 
         <service
             android:name="com.ven.assists.service.AssistsService"

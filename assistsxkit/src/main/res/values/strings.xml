@@ -12,6 +12,7 @@
     <string name="plugin_install_cancelled">已取消安装</string>
     <string name="action_confirm">确认</string>
     <string name="action_cancel">取消</string>
+    <string name="action_install">安装</string>
     <string name="action_launch">启动</string>
     <string name="action_close">关闭</string>
 </resources>

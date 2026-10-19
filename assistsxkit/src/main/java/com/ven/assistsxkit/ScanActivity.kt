@@ -355,16 +355,7 @@ class ScanActivity : AppCompatActivity() {
             }
 
             holder.view.btnAdd.setOnClickListener {
-                // 生成唯一ID
-                item.plugin.id = UUID.randomUUID().toString()
-                // 设置插件路径为URL
-                item.plugin.path = item.url
-                // 创建插件对象并返回
-                val intent = Intent()
-                intent.putExtra("action", "install_plugin")
-                intent.putExtra("plugin_data", GsonUtils.toJson(item.plugin))
-                setResult(RESULT_OK, intent)
-                finish()
+                installScanResult(item)
             }
 
             if (item.url.endsWith(".svg")) {
@@ -388,6 +379,20 @@ class ScanActivity : AppCompatActivity() {
         override fun getItemCount() = items.size
     }
 
+    // 安装扫描到的插件：返回结果给上层并结束当前页面
+    private fun installScanResult(item: ScanResult) {
+        // 生成唯一ID
+        item.plugin.id = UUID.randomUUID().toString()
+        // 设置插件路径为URL
+        item.plugin.path = item.url
+        // 创建插件对象并返回
+        val intent = Intent()
+        intent.putExtra("action", "install_plugin")
+        intent.putExtra("plugin_data", GsonUtils.toJson(item.plugin))
+        setResult(RESULT_OK, intent)
+        finish()
+    }
+
     // 显示插件详情对话框
     private fun showPluginDetailDialog(scanResult: ScanResult) {
         val plugin = scanResult.plugin
@@ -402,7 +407,10 @@ class ScanActivity : AppCompatActivity() {
         MaterialAlertDialogBuilder(this)
             .setTitle("插件详情")
             .setMessage(message)
-            .setPositiveButton(R.string.action_close, null)
+            .setPositiveButton(R.string.action_install) { _, _ ->
+                installScanResult(scanResult)
+            }
+            .setNegativeButton(R.string.action_close, null)
             .show()
     }
 
