@@ -22,7 +22,7 @@
 
 ## 依赖集成（assists 库）
 
-当前使用 Assists **3.5.6**，从 Maven Central 拉取：
+当前使用 Assists **3.5.10**，从 Maven Central 拉取：
 
 ```gradle
 repositories {
@@ -30,11 +30,11 @@ repositories {
 }
 
 dependencies {
-    api "io.github.ven-coder:assists-base:3.5.9"
-    api "io.github.ven-coder:assists-web:3.5.9"
-    api "io.github.ven-coder:assists-mp:3.5.9"
-    api "io.github.ven-coder:assists-log:3.5.9"
-    api "io.github.ven-coder:assists-ime:3.5.9"
+    api "io.github.ven-coder:assists-base:3.5.10"
+    api "io.github.ven-coder:assists-web:3.5.10"
+    api "io.github.ven-coder:assists-mp:3.5.10"
+    api "io.github.ven-coder:assists-log:3.5.10"
+    api "io.github.ven-coder:assists-ime:3.5.10"
 }
 ```
 
