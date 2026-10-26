@@ -22,17 +22,34 @@ import com.ven.assistsxkit.model.Plugin
 import com.ven.assistsxkit.model.url
 import com.ven.assistsxkit.plugin.PluginChromeController
 import com.ven.assistsxkit.plugin.PluginErrorPageInteractor
+import com.ven.assistsxkit.plugin.PluginRuntimeManager
 import com.ven.assistsxkit.server.PluginWebServerManager
 import com.ven.assistsxkit.web.event.AssistsxWebEventBus
 
 open class IndexActivity : AppCompatActivity() {
 
     companion object {
-        fun open(plugin: Plugin) {
-            ActivityUtils.getTopActivity().let {
-                it.startActivity(Intent(it, IndexActivity::class.java).putExtra("plugin", plugin))
+        fun open(plugin: Plugin, sessionId: String? = null): Boolean {
+            val id = sessionId ?: when (val reservation = PluginRuntimeManager.reserve(plugin)) {
+                is PluginRuntimeManager.Reservation.Acquired -> reservation.session.id
+                is PluginRuntimeManager.Reservation.Existing,
+                is PluginRuntimeManager.Reservation.Busy -> return false
+            }
+            val activity = ActivityUtils.getTopActivity()
+            return try {
+                activity.startActivity(
+                    Intent(activity, IndexActivity::class.java)
+                        .putExtra("plugin", plugin)
+                        .putExtra(EXTRA_PLUGIN_SESSION_ID, id),
+                )
+                true
+            } catch (_: Exception) {
+                PluginRuntimeManager.clear(id)
+                false
             }
         }
+
+        const val EXTRA_PLUGIN_SESSION_ID = "plugin_session_id"
     }
 
     val binding: FragmentContainerActivityBinding by lazy { FragmentContainerActivityBinding.inflate(layoutInflater) }
@@ -42,6 +59,7 @@ open class IndexActivity : AppCompatActivity() {
 
     /** 错误页 Handler 实例（需为字段以保证 PluginErrorPageInteractor.unbind 引用相等） */
     private var errorPageHandler: PluginErrorPageInteractor.Handler? = null
+    private var pluginSessionId: String? = null
 
     /** 进入页面时顶部 ActionBar 是否默认可见，子类可覆写为 false 以默认隐藏 */
     open val defaultActionBarVisible: Boolean = true
@@ -51,6 +69,21 @@ open class IndexActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val plugin = intent.getSerializableExtra("plugin") as? Plugin
+        if (plugin == null) {
+            finish()
+            return
+        }
+        pluginSessionId = intent.getStringExtra(EXTRA_PLUGIN_SESSION_ID)?.takeIf { id ->
+            PluginRuntimeManager.current()?.id == id
+        } ?: when (val reservation = PluginRuntimeManager.reserve(plugin)) {
+            is PluginRuntimeManager.Reservation.Acquired -> reservation.session.id
+            is PluginRuntimeManager.Reservation.Existing,
+            is PluginRuntimeManager.Reservation.Busy -> {
+                finish()
+                return
+            }
+        }
         setContentView(binding.root)
         BarUtils.setStatusBarColor(this, Color.TRANSPARENT)
         // 状态栏占位 View：资源高度取决于设备状态栏，按顶部占位为原生布局预留空间
@@ -61,11 +94,15 @@ open class IndexActivity : AppCompatActivity() {
         binding.toolbar.setTitleTextColor(resources.getColor(R.color.colorPrimary, theme))
         binding.toolbar.setSubtitleTextColor(resources.getColor(R.color.colorPrimary, theme))
         binding.toolbar.visibility = if (defaultActionBarVisible) View.VISIBLE else View.GONE
-        FragmentUtils.add(supportFragmentManager, IndexFragment.get(intent.getSerializableExtra("plugin") as Plugin).apply {
+        FragmentUtils.add(supportFragmentManager, IndexFragment.get(plugin).apply {
             onReceivedTitle = {
                 this@IndexActivity.binding.toolbar.title = it
             }
         }, binding.container.id)
+        pluginSessionId?.let { sessionId ->
+            PluginRuntimeManager.bindStopAction(sessionId) { closePluginAndFinish() }
+            PluginRuntimeManager.markRunning(sessionId)
+        }
 
         floatingActionBar = FloatingActionBar(this).apply {
             onCloseClick = {
@@ -143,6 +180,14 @@ open class IndexActivity : AppCompatActivity() {
         errorPageHandler?.let { PluginErrorPageInteractor.unbind(it) }
         errorPageHandler = null
         PluginChromeController.unbind(this)
+        pluginSessionId?.let { sessionId ->
+            if (PluginRuntimeManager.isCurrent(sessionId)) {
+                AssistsxWebEventBus.clearScope()
+                AssistsWindowManager.removeAllWindow()
+                PluginWebServerManager.stopServer()
+                PluginRuntimeManager.clear(sessionId)
+            }
+        }
         super.onDestroy()
     }
 
@@ -194,10 +239,13 @@ open class IndexActivity : AppCompatActivity() {
 
     /** 关闭插件页面并清理悬浮窗、事件总线客户端与本地服务 */
     internal fun closePluginAndFinish() {
+        val sessionId = pluginSessionId ?: return
+        if (!PluginRuntimeManager.isCurrent(sessionId)) return
         finish()
         AssistsxWebEventBus.clearScope()
         AssistsWindowManager.removeAllWindow()
         PluginWebServerManager.stopServer()
+        PluginRuntimeManager.clear(sessionId)
     }
 
 }

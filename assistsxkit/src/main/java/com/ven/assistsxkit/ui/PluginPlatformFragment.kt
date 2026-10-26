@@ -12,13 +12,17 @@ import com.ven.assistsxkit.ui.fragment.InstalledPluginsFragment
 import com.ven.assistsxkit.R
 import com.ven.assistsxkit.databinding.ActivityPluginPlatformBinding
 import com.ven.assistsxkit.ui.fragment.SettingsFragment
+import com.ven.assistsxkit.plugin.PluginRuntimeManager
 
 open class PluginPlatformFragment : Fragment() {
+
+    private var pluginListSessionId: String? = null
 
     val binding: ActivityPluginPlatformBinding by lazy { ActivityPluginPlatformBinding.inflate(layoutInflater) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        pluginListSessionId = arguments?.getString(PluginRuntimeManager.EXTRA_PLUGIN_SESSION_ID)
         BarUtils.setStatusBarColor(requireActivity(), "#23252A".toColorInt())
         BarUtils.setNavBarColor(requireActivity(), "#23252A".toColorInt())
     }
@@ -32,6 +36,12 @@ open class PluginPlatformFragment : Fragment() {
 
         setupViewPager()
         setupBottomNavigation()
+        if (pluginListSessionId != null) {
+            binding.viewPager.setCurrentItem(0, false)
+            binding.bottomNav.selectedItemId = R.id.nav_installed
+            PluginRuntimeManager.confirmPluginListVisible(pluginListSessionId!!)
+            pluginListSessionId = null
+        }
     }
 
     open fun setupViewPager() {
@@ -66,4 +76,4 @@ open class PluginPlatformFragment : Fragment() {
         }
     }
 
-} 
+}

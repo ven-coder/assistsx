@@ -35,6 +35,7 @@ import com.ven.assistsxkit.ScanActivity
 import com.ven.assistsxkit.SettingGuideActivity
 import kotlinx.coroutines.delay
 import com.ven.assistsxkit.ui.PluginPlatformFragment
+import com.ven.assistsxkit.plugin.PluginRuntimeManager
 
 
 class MainActivity : AppCompatActivity(), AssistsServiceListener {
@@ -74,6 +75,16 @@ class MainActivity : AppCompatActivity(), AssistsServiceListener {
         super.onResume()
         isActivityResumed = true
         checkServiceEnable()
+        handlePluginListNavigationIntent()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (isActivityResumed) {
+            checkServiceEnable()
+            handlePluginListNavigationIntent()
+        }
     }
 
     override fun onPause() {
@@ -103,6 +114,27 @@ class MainActivity : AppCompatActivity(), AssistsServiceListener {
                 LogUtils.d("add MainFragment")
             }
         }
+    }
+
+    /** MCP starts plugins only after the installed-plugin tab is visible. */
+    private fun handlePluginListNavigationIntent() {
+        val launchIntent = intent ?: return
+        if (launchIntent.getStringExtra(PluginRuntimeManager.EXTRA_PLUGIN_SESSION_ID) == null) return
+        if (!AssistsCore.isA11yEnabled()) return
+
+        val sessionId = launchIntent.getStringExtra(PluginRuntimeManager.EXTRA_PLUGIN_SESSION_ID)
+        supportFragmentManager.executePendingTransactions()
+        val platformFragment = PluginPlatformFragment().apply {
+            arguments = Bundle().apply {
+                sessionId?.let { putString(PluginRuntimeManager.EXTRA_PLUGIN_SESSION_ID, it) }
+            }
+        }
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.fl_container, platformFragment)
+            .commitNow()
+
+        launchIntent.action = null
+        launchIntent.removeExtra(PluginRuntimeManager.EXTRA_PLUGIN_SESSION_ID)
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {

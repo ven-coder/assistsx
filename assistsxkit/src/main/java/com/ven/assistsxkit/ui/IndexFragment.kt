@@ -95,7 +95,6 @@ class IndexFragment : Fragment(), AssistsServiceListener {
         binding.webView.removeAllViews()
         binding.webView.clearHistory()
         AssistsService.listeners.remove(this)
-        PluginWebServerManager.stopServer()
     }
 
 

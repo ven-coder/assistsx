@@ -19,12 +19,14 @@ import com.ven.assistsxkit.model.Plugin
 import com.ven.assistsxkit.model.isRemote
 import com.ven.assistsxkit.model.url
 import com.ven.assistsxkit.plugin.PluginErrorPageInteractor
+import com.ven.assistsxkit.plugin.PluginRuntimeManager
 import com.ven.assistsxkit.server.PluginWebServerManager
 
 @SuppressLint("StaticFieldLeak")
 object OverlayIndex : AssistsServiceListener {
 
     private var plugin: Plugin? = null
+    private var pluginSessionId: String? = null
 
     /** 错误页 Handler 实例（需为字段以保证 PluginErrorPageInteractor.unbind 引用相等） */
     private var errorPageHandler: PluginErrorPageInteractor.Handler? = null
@@ -89,12 +91,20 @@ object OverlayIndex : AssistsServiceListener {
         }
 
 
-    fun show(plugin: Plugin) {
+    fun show(plugin: Plugin, sessionId: String? = null): Boolean {
+        val id = sessionId ?: when (val reservation = PluginRuntimeManager.reserve(plugin)) {
+            is PluginRuntimeManager.Reservation.Acquired -> reservation.session.id
+            is PluginRuntimeManager.Reservation.Existing,
+            is PluginRuntimeManager.Reservation.Busy -> return false
+        }
+        if (PluginRuntimeManager.current()?.id != id) return false
         if (!AssistsService.listeners.contains(this)) {
             AssistsService.listeners.add(this)
         }
         this.plugin = plugin
+        pluginSessionId = id
         PluginWebServerManager.setRunningPlugin(plugin)
+        PluginRuntimeManager.bindStopAction(id) { hide() }
         // 注册错误页交互：错误页 JS 触发「重试/关闭」时由本浮窗处理
         errorPageHandler = object : PluginErrorPageInteractor.Handler {
             override fun onErrorRetry(url: String?) {
@@ -113,17 +123,22 @@ object OverlayIndex : AssistsServiceListener {
         }
         if (plugin.isRemote()) {
             viewBinding?.web?.loadUrl(plugin.url())
+            PluginRuntimeManager.markRunning(id)
         } else {
             CoroutineWrapper.launch {
                 val port = PluginWebServerManager.startServer(plugin, port = plugin.port)
                 if (port > 0) {
-                    runMain { viewBinding?.web?.loadUrl(plugin.url(port = port)) }
+                    runMain {
+                        viewBinding?.web?.loadUrl(plugin.url(port = port))
+                        PluginRuntimeManager.markRunning(id)
+                    }
                 } else {
+                    clear()
                     "启动插件失败，请检查插件配置文件".overlayToast()
                 }
             }
         }
-
+        return true
 
     }
 
@@ -136,6 +151,8 @@ object OverlayIndex : AssistsServiceListener {
     }
 
     fun clear() {
+        val sessionId = pluginSessionId
+        if (sessionId != null && PluginRuntimeManager.current()?.id != sessionId) return
         errorPageHandler?.let { PluginErrorPageInteractor.unbind(it) }
         errorPageHandler = null
         viewBinding?.web?.stopLoading()
@@ -149,6 +166,9 @@ object OverlayIndex : AssistsServiceListener {
         // 停止本地 HTTP 服务，释放端口
         PluginWebServerManager.stopServer()
         AssistsCore.clearKeepScreenOn()
+        plugin = null
+        pluginSessionId = null
+        sessionId?.let { PluginRuntimeManager.clear(it) }
     }
 
 

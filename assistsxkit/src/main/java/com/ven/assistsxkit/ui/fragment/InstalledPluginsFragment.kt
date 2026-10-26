@@ -52,6 +52,7 @@ import com.ven.assistsxkit.R
 import com.ven.assistsxkit.overlays.OverlayIndex
 import com.ven.assistsxkit.server.PluginWebServerManager
 import com.ven.assistsxkit.ui.IndexActivity
+import com.ven.assistsxkit.plugin.PluginRuntimeManager
 import com.ven.assistsxkit.ui.PluginPlatformFragment
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -705,10 +706,30 @@ open class InstalledPluginsFragment : Fragment() {
                     return@launch
                 }
             }
-            if (plugin.indexInOverlay == true || plugin.isShowOverlay) {
-                runMain { OverlayIndex.show(plugin) }
-            } else {
-                IndexActivity.open(plugin)
+            when (val reservation = PluginRuntimeManager.reserve(plugin)) {
+                is PluginRuntimeManager.Reservation.Acquired -> {
+                    val session = reservation.session
+                    val launched = runCatching {
+                        runMain {
+                            if (session.mode == PluginRuntimeManager.Mode.OVERLAY) {
+                                OverlayIndex.show(plugin, session.id)
+                            } else {
+                                IndexActivity.open(plugin, session.id)
+                            }
+                        }
+                    }.getOrDefault(false)
+                    if (!launched) {
+                        if (session.mode == PluginRuntimeManager.Mode.OVERLAY) {
+                            runMain { OverlayIndex.clear() }
+                        }
+                        PluginRuntimeManager.clear(session.id)
+                        ToastUtils.showShort("插件启动失败")
+                    }
+                }
+                is PluginRuntimeManager.Reservation.Existing ->
+                    ToastUtils.showShort("插件已在运行")
+                is PluginRuntimeManager.Reservation.Busy ->
+                    ToastUtils.showShort("请先退出正在运行的插件：${reservation.session.plugin.name}")
             }
         }
 
@@ -1103,4 +1124,4 @@ open class InstalledPluginsFragment : Fragment() {
         private const val REQUEST_CODE_PICK_PLUGIN = 1001
         private const val DEFAULT_BUFFER_SIZE = 8192
     }
-} 
+}
