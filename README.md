@@ -42,7 +42,7 @@ dependencies {
 
 ### 发布 assistsxkit 到 Maven Central
 
-版本号在根目录 `build.gradle` 的 `assistsxkitVersion`（当前 **0.0.7**）中维护。
+版本号在根目录 `build.gradle` 的 `assistsxkitVersion`（当前 **0.0.8**）中维护。
 
 发布时请一并更新 `assistsxkit/CHANGELOG.md`（「当前最新已发布版本」与条目必须和 `assistsxkitVersion` 一致），以及各宿主项目引用的版本，避免版本号漂移。
 
@@ -53,7 +53,7 @@ dependencies {
 发布后坐标：
 
 ```gradle
-implementation "io.github.ven-coder:assistsxkit:0.0.7"
+implementation "io.github.ven-coder:assistsxkit:0.0.8"
 ```
 
 ##### 作者Wechat

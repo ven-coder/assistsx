@@ -5,13 +5,13 @@ buildscript {
     ext {
 
         // 应用版本
-        versionCode = 9
-        versionName = "0.0.8-3.5.10-open"
+        versionCode = 10
+        versionName = "0.0.9-3.5.11-open"
 
         // assists 系列（Maven Central: io.github.ven-coder）
-        assistsVersion = "3.5.10"
+        assistsVersion = "3.5.11"
         mavenGroupId = "io.github.ven-coder"
-        assistsxkitVersion = "0.0.7"
+        assistsxkitVersion = "0.0.8"
 
         // SDK 版本（与 assists 3.5.0 对齐）
         compileSdk = 36

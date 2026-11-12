@@ -8,6 +8,9 @@ import android.view.ViewGroup
 import android.webkit.WebView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -86,6 +89,15 @@ open class IndexActivity : AppCompatActivity() {
         }
         setContentView(binding.root)
         BarUtils.setStatusBarColor(this, Color.TRANSPARENT)
+        // 顶部由状态栏占位 View 控制，其余边缘按系统栏和键盘的实际尺寸避让。
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.navigationBars() or WindowInsetsCompat.Type.displayCutout())
+            val keyboard = insets.getInsets(WindowInsetsCompat.Type.ime())
+            view.setPadding(bars.left, 0, bars.right, maxOf(bars.bottom, keyboard.bottom))
+            insets
+        }
+        ViewCompat.requestApplyInsets(binding.root)
         // 状态栏占位 View：资源高度取决于设备状态栏，按顶部占位为原生布局预留空间
         binding.statusBarPlaceholder.updateLayoutParams<ViewGroup.LayoutParams> {
             height = BarUtils.getStatusBarHeight()
