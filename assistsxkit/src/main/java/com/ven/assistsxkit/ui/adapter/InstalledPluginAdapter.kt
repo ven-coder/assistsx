@@ -23,6 +23,14 @@ class InstalledPluginAdapter(
     private val onItemLongClick: (Plugin) -> Unit
 ) : ListAdapter<Plugin, InstalledPluginAdapter.PluginViewHolder>(PluginDiffCallback()) {
 
+    private var updates: Map<String, String> = emptyMap()
+    var onUpdateClick: (Plugin) -> Unit = {}
+
+    fun setUpdates(value: Map<String, String>) {
+        updates = value
+        notifyDataSetChanged()
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PluginViewHolder {
         return PluginViewHolder(
             ItemPluginBinding.inflate(
@@ -66,6 +74,12 @@ class InstalledPluginAdapter(
                     onActionClick(getItem(position))
                 }
             }
+            val updateClick = android.view.View.OnClickListener {
+                val position = bindingAdapterPosition
+                if (position != RecyclerView.NO_POSITION) onUpdateClick(getItem(position))
+            }
+            binding.txtNewVersion.setOnClickListener(updateClick)
+            binding.btnUpdate.setOnClickListener(updateClick)
         }
 
         fun bind(plugin: Plugin) {
@@ -73,6 +87,12 @@ class InstalledPluginAdapter(
                 // 设置基本信息
                 txtName.text = plugin.name
                 txtVersion.text = plugin.versionName.ifEmpty { plugin.version }
+                val newVersion = updates[plugin.packageName]
+                txtNewVersion.isVisible = newVersion != null
+                btnUpdate.isVisible = newVersion != null
+                btnUpdate.contentDescription = "${plugin.name}，版本更新"
+                txtNewVersion.text = newVersion?.let { "→ $it⬆️" }.orEmpty()
+                txtNewVersion.contentDescription = "${plugin.name}，新版本 $newVersion"
                 txtDescription.text = plugin.description
                 txtDescription.isVisible = plugin.description.isNotEmpty()
 
@@ -132,4 +152,4 @@ class InstalledPluginAdapter(
             return oldItem == newItem
         }
     }
-} 
+}
